@@ -552,7 +552,11 @@ function pick(pool,n){
   }
   return out;
 }
-const mastered = q => (state.box[q.id]||0) >= 3;
+// Dominio confirmado: recuperar correctamente en al menos 3 días diferentes, sin ayuda.
+const mastered = q => {
+  const r=state.review[q.id];
+  return !!r && (Number(r.daysCorrect)||0)>=3 && (Number(r.streak)||0)>=3 && !state.wrong[q.id];
+};
 
 /* ====== Racha / XP ====== */
 function touchDay(){
@@ -568,28 +572,45 @@ function record(q, ok, assisted=false){
   touchDay();
   const today=dayKey();
   state.today.n++;
-  const r=state.review[q.id] && typeof state.review[q.id]==='object' ? state.review[q.id] : {};
-  const nextCorrect = ok ? Math.min(6,(Number(r.streak)||0)+1) : 0;
-  const days=[1,1,2,4,7,14,30][nextCorrect];
-  const nextDate=new Date(today+'T12:00:00');
-  nextDate.setDate(nextDate.getDate()+days);
-  const due=dayKey(nextDate);
+  const prior=state.review[q.id] && typeof state.review[q.id]==='object' ? state.review[q.id] : {};
   const daily=state.activity[today] && typeof state.activity[today]==='object' ? state.activity[today] : {n:0,ok:0};
-  daily.n=(daily.n||0)+1; if(ok) daily.ok=(daily.ok||0)+1;
+  daily.n=(daily.n||0)+1;if(ok)daily.ok=(daily.ok||0)+1;
   state.activity[today]=daily;
-  if (Object.keys(state.activity).length>180) delete state.activity[Object.keys(state.activity).sort()[0]];
-  if (ok && !assisted){
-    state.box[q.id]=Math.min(4,(state.box[q.id]||0)+1);
-    state.xp+=10;
-    const recovered=(state.wrong[q.id] && r.recoveryDay!==today) ? (Number(r.recovery)||0)+1 : (Number(r.recovery)||0);
-    if(state.wrong[q.id] && recovered>=2) delete state.wrong[q.id];
-    state.review[q.id]={streak:nextCorrect,due,last:today,recovery:recovered,recoveryDay:state.wrong[q.id]?today:'',lapses:Number(r.lapses)||0};
-  } else {
+  const dates=Object.keys(state.activity).sort();
+  if(dates.length>180) delete state.activity[dates[0]];
+  const dueDate=(days)=>{
+    const d=new Date(today+'T12:00:00');d.setDate(d.getDate()+days);return dayKey(d);
+  };
+  const r={...prior};
+  if (!ok){
+    r.streak=0;r.daysCorrect=0;r.last=today;r.due=dueDate(1);r.lastMissDay=today;
+    r.recovery=0;r.recoveryDay='';r.lapses=(Number(r.lapses)||0)+1;
     state.box[q.id]=0;
     state.wrong[q.id]=(state.wrong[q.id]||0)+1;
     state.xp+=2;
-    state.review[q.id]={streak:0,due,last:today,recovery:0,recoveryDay:'',lapses:(Number(r.lapses)||0)+1};
+  } else if (assisted) {
+    // Una respuesta con ayuda practica la regla, pero nunca prueba recuerdo autónomo.
+    r.last=today;r.due=dueDate(1);r.streak=0;r.daysCorrect=0;
+    state.box[q.id]=0;
+    state.xp+=2;
+  } else {
+    const newDay=r.lastCorrectDay!==today;
+    const daysCorrect=(Number(r.daysCorrect)||0)+(newDay?1:0);
+    const streak=(Number(r.streak)||0)+(newDay?1:0);
+    r.daysCorrect=Math.min(100,daysCorrect);
+    r.streak=Math.min(6,streak);
+    r.lastCorrectDay=today;r.last=today;
+    const intervals=[1,1,2,4,7,14,30];
+    r.due=dueDate(intervals[Math.min(6,r.streak)]);
+    state.box[q.id]=Math.min(4,Math.max(0,r.daysCorrect));
+    if(state.wrong[q.id]){
+      const recovery=(Number(r.recovery)||0)+(r.recoveryDay!==today?1:0);
+      r.recovery=recovery;r.recoveryDay=today;
+      if(recovery>=2)delete state.wrong[q.id];
+    }
+    state.xp+=newDay?10:2;
   }
+  state.review[q.id]=r;
   save();
 }
 
@@ -687,7 +708,7 @@ function home(){
     <button class="big" data-act="errors" ${wrongN?'':'disabled'}>❌ Mis errores (${wrongN})</button>
   </div>
   <div class="card" style="margin-top:12px"><h2>Dominio por tema <span class="mut">· total ${pct}%</span></h2>${rows}</div>
-  <div class="card"><h2>📈 Mi avance</h2><p class="mut">Preguntas dominadas: ${totM}/${BANK.length}. Repasos para hoy: ${overdue}.</p>
+  <div class="card"><h2>📈 Mi avance</h2><p class="mut">Recuerdo confirmado en días diferentes: ${totM}/${BANK.length}. Repasos para hoy: ${overdue}.</p>
   <button class="big" data-act="progress">Ver estadísticas y simulacros</button></div>
   <div class="card"><button class="pri big" data-act="needs">🧭 No sé qué practicar · Ayúdame a elegir</button></div>
   <div class="card"><h2>🎧 Practicar habilidades</h2><div class="grid">
@@ -697,7 +718,7 @@ function home(){
     <button class="big" data-act="writing">✍️ Writing: escribir</button>
   </div></div>
   <div class="card"><button class="big" data-act="import">➕ Agregar preguntas de ChatGPT (${(state.custom||[]).length} propias)</button></div>
-  <p class="mut">Una pregunta se considera "dominada" cuando la aciertas varias veces seguidas. Meta: llegar a 90% antes del 4 de dic.</p>`;
+  <p class="mut">Dominio confirmado = recordar sin pistas en tres días distintos. Acertar varias veces hoy todavía cuenta como práctica, no como memoria duradera.</p>`;
 }
 
 function startSession(qs, opts={}){
@@ -765,7 +786,8 @@ function answer(user){
     document.querySelectorAll('.opt').forEach((b,k)=>{ const o=S.opts[k]; if(o.i===q.answer) b.classList.add('ok'); else if(k===user_k(user)) b.classList.add('bad'); });
   }
   const praise = ['¡Bien!','¡Exacto!','¡Muy bien!','¡Eso es!'][Math.floor(Math.random()*4)];
-  $('#fb').innerHTML = `<div class="fb ${ok?'ok':'bad'}"><b>${ok?'✅ '+praise+(assisted?' · Practicado con ayuda (+2 XP)':' +10 XP'):'❌ Respuesta correcta: '+esc(correctText(q))}</b>${q.explain?`<div class="mut" style="margin-top:4px">💡 ${esc(q.explain)}</div>`:''}${q.type==='dict' || q.audio?`<div style="margin-top:4px">🔊 ${esc(q.audio||q.answer)}</div>`:''}</div><button class="pri big" data-act="next" id="nextbtn">Siguiente →</button>`;
+  const reward=ok?(assisted?2:state.review[q.id]?.lastCorrectDay===dayKey() && state.review[q.id]?.daysCorrect>=1 ? (state.activity[dayKey()]?.n>1?null:10):10):2;
+  $('#fb').innerHTML = `<div class="fb ${ok?'ok':'bad'}"><b>${ok?'✅ '+praise+(assisted?' · Practicado con ayuda (+2 XP)':' · Repasa mañana para confirmar que lo recuerdas'):'❌ Respuesta correcta: '+esc(correctText(q))}</b>${q.explain?`<div class="mut" style="margin-top:4px">💡 ${esc(q.explain)}</div>`:''}${q.type==='dict' || q.audio?`<div style="margin-top:4px">🔊 ${esc(q.audio||q.answer)}</div>`:''}</div><button class="pri big" data-act="next" id="nextbtn">Siguiente →</button>`;
   const nb=$('#nextbtn'); if(nb) nb.focus();
   const hdr = document.querySelector('.pills'); if (hdr) { const match = header().match(/<div class="pills">([\s\S]*?)<\/div><\/div>/); if (match) hdr.innerHTML = match[1]; }
 }
