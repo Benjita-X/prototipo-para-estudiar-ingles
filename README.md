@@ -26,7 +26,7 @@ App web de un solo archivo (`index.html`) para estudiar inglés nivel A1 y sacar
 - Después de la ES4 hay un examen final escrito de todas las unidades.
 - Escala de notas chilena: 60% de exigencia = 4.0, 100% = 7.0.
 
-## Qué hace la app (v0.1)
+## Qué hace la app (v0.3)
 
 - **📖 Aprender (módulo de estudio):** 10 lecciones en español basadas en el Student Book 1B (unidades 7 y 8) y en el cronograma: was/were, expresiones de tiempo y clima, fechas y años, conectores y secuencia, regulares (-ed y pronunciación), irregulares (todos los del libro con 🔊), negativo, preguntas con did, vocabulario y frases del libro (ropa, disculpas, reacciones) y un resumen con estrategia de prueba. Cada lección tiene ejemplos con audio y una prueba rápida de 3 preguntas, y se marca como "entendida".
 - **Hoy toca:** sesión de 10 preguntas según el plan por fechas (`PLAN` en el código), con acceso a la lección del día.
@@ -39,9 +39,33 @@ App web de un solo archivo (`index.html`) para estudiar inglés nivel A1 y sacar
 - **Gamificación:** XP, niveles, racha diaria, meta de 20 preguntas por día y cuenta regresiva al examen.
 - **Importar preguntas de ChatGPT:** pega un JSON y las preguntas quedan guardadas en tu navegador.
 
-Banco actual: 218 preguntas (58 irregulares, 40 regulares, 25 tiempo, fechas y clima, 19 was/were, 16 preguntas con did, 15 dictados, 13 negativo, 13 vocabulario del libro, 12 conectores, 7 lectura) y 53 verbos irregulares en las fichas.
+Banco actual: **251 preguntas**: 58 irregulares, 40 regulares, 25 tiempo/fechas/clima, 19 was/were, 16 preguntas con did, 27 listening (12 comprensión auditiva y 15 dictados), 13 negativo, 13 vocabulario, 12 conectores, 16 lectura y 12 escritura guiada. Las fichas contienen 53 verbos irregulares.
 
 Contenido tomado del Student Book Wide Angle 1B (unidades 7 y 8, pp. 4–26, Review pp. 75–76 y Grammar focus pp. 81–82). Las oraciones de práctica son originales, no copias del libro.
+
+## Módulos mejorados (rama de desarrollo v0.3)
+
+La app sigue siendo un solo archivo HTML, sin servicios propios ni librerías. Se conserva el progreso de versiones previas mediante la misma clave local.
+
+- **Aprender:** 10 lecciones con tres comprobaciones cada una. La primera finalización exige responder las preguntas; la comprobación posterior se habilita otro día. Solo se marca recuerdo confirmado al acertar las tres al primer intento. Si no se consigue, la siguiente comprobación se realiza otro día.
+- **Práctica a medida:** nuevo menú «No sé qué practicar», ejercicios nuevos, dificultades detectadas y sesiones breves. La sesión diaria intercala hasta cuatro repasos pendientes con el tema del plan. La sesión inteligente combina repasos, puntos débiles y preguntas variadas. En prácticas normales, el botón «No entiendo» ofrece apoyo; usarlo no cuenta como recuerdo independiente.
+- **Reto sin pistas:** preguntas para escribir y ordenar oraciones sin botón de ayuda, útil para identificar cuándo una respuesta se recuerda y cuándo solo se reconoce.
+- **Repasos:** las fichas reveladas son autoevaluaciones, no aumentan el dominio confirmado. Cada pregunta tiene una próxima fecha de revisión. Los aciertos sin ayuda en tres días diferentes son necesarios para aparecer como dominio confirmado; repetirla varias veces el mismo día no multiplica ese progreso. Se incluye un reto de 10 preguntas para recordar sin pistas.
+- **Listening:** 12 actividades adicionales de comprensión (audio y alternativas) y 15 dictados originales. Se utilizan voces disponibles en el navegador.
+- **Reading:** 9 ejercicios nuevos de comprensión lectora contextualizada.
+- **Writing:** 12 ejercicios nuevos de traducción y ordenación de oraciones.
+- **Speaking:** 12 frases con audio, repetición y reconocimiento opcional del navegador. No es una evaluación profesional de pronunciación.
+- **Simulacros:** conserva el formato de 30 preguntas, cuenta regresiva y nota; registra resultados recientes.
+- **Avance:** historial de actividad diaria, recordatorios de repaso y progreso por tema; exportación e importación de copias JSON para mover el progreso entre dispositivos.
+- **Móvil:** estilos adaptables a pantallas estrechas, áreas táctiles de al menos 44 px, tablas con desplazamiento horizontal, controles de texto y soporte para márgenes de pantalla segura.
+
+### Advertencias y alcance
+
+- **Compatibilidad sin internet:** la interfaz y las preguntas no necesitan internet; algunas funciones de voz o reconocimiento sí pueden depender de servicios del navegador, permisos de micrófono o conexión. Su disponibilidad varía entre dispositivos, especialmente cuando la aplicación se abre mediante `file://`.
+- **Sin sincronización automática:** cada navegador y dispositivo mantiene su propio progreso. Puedes exportar un respaldo JSON e importarlo manualmente en otro dispositivo; importar reemplaza el progreso de ese navegador tras confirmación.
+- **No confundir progreso con nivel de inglés:** XP, cantidad de preguntas o lecciones completadas no son equivalentes a competencia comunicativa. El dominio confirmado solo expresa rendimiento en los ejercicios concretos de la app.
+- **Asignaturas:** esta versión continúa centrada en Inglés Inicial, especialmente ES4. Inglés Habilitante e Inglés Intermedio requieren sus programas oficiales antes de incorporar contenido.
+- **Inspiración pedagógica:** se adoptan ideas generales de práctica breve, repaso, personalización y entrenamiento multisensorial. No se copia diseño, arte, marca ni contenido de Duolingo.
 
 ## Estructura del código
 
