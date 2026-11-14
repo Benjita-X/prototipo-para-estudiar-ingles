@@ -616,7 +616,7 @@ function saveSession(){
   try {
     localStorage.setItem(LS_SESSION, JSON.stringify({
       ids:S.qs.map(q => q.id), i:S.i, ok:S.ok,
-      res:S.res.map(r => ({id:r.q.id,ok:r.ok,user:r.user})),
+      res:S.res.map(r => ({id:r.q.id,ok:r.ok,user:r.user,assisted:!!r.assisted})),
       exam:S.exam, title:S.title, end:S.end, startedAt:S.startedAt||Date.now(), answered:locked, helpUsed:!!S.helpUsed
     }));
   } catch(e) { storageFailed = true; const el=$('#save-warning'); if(el) el.style.display='block'; }
@@ -634,15 +634,15 @@ function restoreSession(){
         typeof old.exam!=='boolean' || !Number.isFinite(old.end)) return false;
     const byId = new Map(BANK.map(q => [q.id,q]));
     const qs = old.ids.map(id=>byId.get(id));
-    const res = old.res.map(r=>({q:byId.get(r.id),ok:r.ok,user:r.user}));
+    const res = old.res.map(r=>({q:byId.get(r.id),ok:r.ok,user:r.user,assisted:!!r.assisted}));
     if (qs.some(q=>!q) || res.some(r=>!r.q || typeof r.ok!=='boolean') ||
         old.res.length!==old.i+(old.answered?1:0)) return false;
     S = {qs,i:old.i,ok:old.ok,res,exam:old.exam,title:old.title,end:old.end,startedAt:Number(old.startedAt)||Date.now(),helpUsed:!!old.helpUsed,finished:false};
     locked = false;
-    if (old.answered) S.i++;
+    if (old.answered){ S.i++; S.helpUsed=false; }
     if (S.i>=S.qs.length) { finish(); return true; }
     if (S.exam){ timer = setInterval(tick,1000); if (S.end<=Date.now()){finish();return true;} }
-    S.keepHelp=true;renderQ();
+    S.keepHelp=!old.answered;renderQ();
     return true;
   } catch(e){ return false; }
 }
@@ -770,7 +770,7 @@ function answer(user){
   const hdr = document.querySelector('.pills'); if (hdr) { const match = header().match(/<div class="pills">([\s\S]*?)<\/div><\/div>/); if (match) hdr.innerHTML = match[1]; }
 }
 function user_k(u){ return S.lastK; }
-function next(){ if (!S || !S.qs || S.finished) return; locked=false; S.i++; if (S.i>=S.qs.length) finish(); else { saveSession(); renderQ(); } }
+function next(){ if (!S || !S.qs || S.finished) return; locked=false; S.i++; S.helpUsed=false; if (S.i>=S.qs.length) finish(); else { saveSession(); renderQ(); } }
 
 function gradeOf(p){ return p>=.6 ? 4+3*(p-.6)/.4 : 1+3*p/.6; }
 function finish(){
