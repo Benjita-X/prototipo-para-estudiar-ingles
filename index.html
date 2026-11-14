@@ -107,7 +107,7 @@ function say(text, rate=.85){
 }
 
 /* ====== Estado (localStorage) ====== */
-let state = {box:{},wrong:{},xp:0,streak:0,lastDay:'',today:{d:'',n:0},custom:[],learned:{}};
+let state = {box:{},wrong:{},xp:0,streak:0,lastDay:'',today:{d:'',n:0},custom:[],learned:{},review:{},lessonResults:{},activity:{},exams:[],skills:{}};
 let storageFailed = false;
 try {
   const raw = localStorage.getItem(LS);
@@ -120,6 +120,11 @@ try {
     if (!state.today || typeof state.today !== 'object') state.today = {d:'',n:0};
     if (!Array.isArray(state.custom)) state.custom = [];
     if (!state.learned || typeof state.learned !== 'object' || Array.isArray(state.learned)) state.learned = {};
+    if (!state.review || typeof state.review !== 'object' || Array.isArray(state.review)) state.review = {};
+    if (!state.lessonResults || typeof state.lessonResults !== 'object' || Array.isArray(state.lessonResults)) state.lessonResults = {};
+    if (!state.activity || typeof state.activity !== 'object' || Array.isArray(state.activity)) state.activity = {};
+    if (!Array.isArray(state.exams)) state.exams = [];
+    if (!state.skills || typeof state.skills !== 'object' || Array.isArray(state.skills)) state.skills = {};
     state.custom = state.custom.filter(q => q && typeof q === 'object' && typeof q.topic === 'string' && typeof q.type === 'string');
   }
 } catch(e) { storageFailed = true; }
@@ -474,7 +479,15 @@ const LESSONS = [
 ];
 
 /* ====== Selección con repetición espaciada ====== */
-const weight = q => { const b = state.box[q.id]; return b===undefined ? 5 : [8,4,2,1,.4][b]; };
+// Leitner por nivel + agenda de repaso en días diferentes.
+const reviewDue = q => { const r=state.review[q.id]; return r && typeof r.due==='string' && r.due<=dayKey(); };
+const dueCount = () => BANK.filter(reviewDue).length;
+const weight = q => {
+  const b=state.box[q.id], r=state.review[q.id];
+  if (reviewDue(q)) return 12;
+  if (r && r.due>dayKey()) return state.wrong[q.id] ? 2 : 0.3;
+  return b===undefined ? 5 : [8,4,2,1,0.4][Math.max(0,Math.min(4,b))];
+};
 function pick(pool,n){
   const p=[...pool], out=[];
   while(out.length<n && p.length){
@@ -498,9 +511,30 @@ function touchDay(){
 }
 function record(q, ok){
   touchDay();
+  const today=dayKey();
   state.today.n++;
-  if (ok){ state.box[q.id] = Math.min(4,(state.box[q.id]||0)+1); state.xp += 10; delete state.wrong[q.id]; }
-  else { state.box[q.id] = 0; state.wrong[q.id] = (state.wrong[q.id]||0)+1; state.xp += 2; }
+  const r=state.review[q.id] && typeof state.review[q.id]==='object' ? state.review[q.id] : {};
+  const nextCorrect = ok ? Math.min(6,(Number(r.streak)||0)+1) : 0;
+  const days=[1,1,2,4,7,14,30][nextCorrect];
+  const nextDate=new Date(today+'T12:00:00');
+  nextDate.setDate(nextDate.getDate()+days);
+  const due=dayKey(nextDate);
+  const daily=state.activity[today] && typeof state.activity[today]==='object' ? state.activity[today] : {n:0,ok:0};
+  daily.n=(daily.n||0)+1; if(ok) daily.ok=(daily.ok||0)+1;
+  state.activity[today]=daily;
+  if (Object.keys(state.activity).length>180) delete state.activity[Object.keys(state.activity).sort()[0]];
+  if (ok){
+    state.box[q.id]=Math.min(4,(state.box[q.id]||0)+1);
+    state.xp+=10;
+    const recovered=(state.wrong[q.id] && r.recoveryDay!==today) ? (Number(r.recovery)||0)+1 : (Number(r.recovery)||0);
+    if(state.wrong[q.id] && recovered>=2) delete state.wrong[q.id];
+    state.review[q.id]={streak:nextCorrect,due,last:today,recovery:recovered,recoveryDay:state.wrong[q.id]?today:'',lapses:Number(r.lapses)||0};
+  } else {
+    state.box[q.id]=0;
+    state.wrong[q.id]=(state.wrong[q.id]||0)+1;
+    state.xp+=2;
+    state.review[q.id]={streak:0,due,last:today,recovery:0,recoveryDay:'',lapses:(Number(r.lapses)||0)+1};
+  }
   save();
 }
 
@@ -528,7 +562,7 @@ function saveSession(){
     localStorage.setItem(LS_SESSION, JSON.stringify({
       ids:S.qs.map(q => q.id), i:S.i, ok:S.ok,
       res:S.res.map(r => ({id:r.q.id,ok:r.ok,user:r.user})),
-      exam:S.exam, title:S.title, end:S.end, answered:locked
+      exam:S.exam, title:S.title, end:S.end, startedAt:S.startedAt||Date.now(), answered:locked
     }));
   } catch(e) { storageFailed = true; const el=$('#save-warning'); if(el) el.style.display='block'; }
 }
@@ -548,7 +582,7 @@ function restoreSession(){
     const res = old.res.map(r=>({q:byId.get(r.id),ok:r.ok,user:r.user}));
     if (qs.some(q=>!q) || res.some(r=>!r.q || typeof r.ok!=='boolean') ||
         old.res.length!==old.i+(old.answered?1:0)) return false;
-    S = {qs,i:old.i,ok:old.ok,res,exam:old.exam,title:old.title,end:old.end,finished:false};
+    S = {qs,i:old.i,ok:old.ok,res,exam:old.exam,title:old.title,end:old.end,startedAt:Number(old.startedAt)||Date.now(),finished:false};
     locked = false;
     if (old.answered) S.i++;
     if (S.i>=S.qs.length) { finish(); return true; }
@@ -577,6 +611,7 @@ function home(){
   const t = dayKey(); const n = state.today.d===t ? state.today.n : 0;
   const plan = todayPlan();
   const wrongN = BANK.filter(q => state.wrong[q.id]).length;
+  const overdue = dueCount();
   const totM = BANK.filter(mastered).length;
   const pct = Math.round(100*totM/BANK.length);
   const rows = Object.keys(TOPICS).map(k => {
@@ -588,7 +623,8 @@ function home(){
     <div class="mut">Meta del día: ${Math.min(n,GOAL)}/${GOAL} preguntas</div><div class="bar" style="margin:6px 0 12px"><i style="width:${Math.min(100,100*n/GOAL)}%"></i></div>
     ${(()=>{ const li = plan[3].map(lessonIdx).find(i=>i>=0); return li>=0 ? `<button class="big" style="margin-bottom:8px" data-act="lesson" data-i="${li}">📖 Primero estudia la lección de hoy</button>` : ''; })()}
     <button class="pri big" data-act="plan">▶ Empezar sesión de hoy (10 preguntas)</button>
-    <button class="big" style="margin-top:8px" data-act="learn">📖 Aprender: todas las lecciones (${LESSONS.filter(l=>state.learned[l.id]).length}/${LESSONS.length})</button></div>
+    <button class="big" style="margin-top:8px" data-act="learn">📖 Aprender: todas las lecciones (${LESSONS.filter(l=>state.learned[l.id]).length}/${LESSONS.length})</button>
+    <button class="big" style="margin-top:8px" data-act="due" ${overdue?'':'disabled'}>📅 Repasos pendientes (${overdue})</button></div>
   <div class="grid">
     <button class="big" data-act="smart">🧠 Sesión inteligente</button>
     <button class="big" data-act="exam">📝 Simulacro (30)</button>
@@ -596,6 +632,8 @@ function home(){
     <button class="big" data-act="errors" ${wrongN?'':'disabled'}>❌ Mis errores (${wrongN})</button>
   </div>
   <div class="card" style="margin-top:12px"><h2>Dominio por tema <span class="mut">· total ${pct}%</span></h2>${rows}</div>
+  <div class="card"><h2>📈 Mi avance</h2><p class="mut">Preguntas dominadas: ${totM}/${BANK.length}. Repasos para hoy: ${overdue}.</p>
+  <button class="big" data-act="progress">Ver estadísticas y simulacros</button></div>
   <div class="card"><button class="big" data-act="import">➕ Agregar preguntas de ChatGPT (${(state.custom||[]).length} propias)</button></div>
   <p class="mut">Una pregunta se considera "dominada" cuando la aciertas varias veces seguidas. Meta: llegar a 90% antes del 4 de dic.</p>`;
 }
@@ -603,7 +641,7 @@ function home(){
 function startSession(qs, opts={}){
   if (!qs.length){ alert('No hay preguntas para esta sesión.'); return; }
   locked = false;
-  S = {qs, i:0, ok:0, res:[], exam:!!opts.exam, title:opts.title||'Sesión', end: opts.exam ? Date.now()+30*60000 : 0, finished:false};
+  S = {qs, i:0, ok:0, res:[], exam:!!opts.exam, title:opts.title||'Sesión', end: opts.exam ? Date.now()+30*60000 : 0, startedAt:Date.now(), finished:false};
   clearInterval(timer);
   if (S.exam){ timer = setInterval(tick,1000); }
   saveSession();
@@ -678,9 +716,14 @@ function finish(){
   clearSession();
   // en simulacro, lo no respondido cuenta como incorrecto
   const total = S.qs.length; const p = S.ok/total; const g = gradeOf(p).toFixed(1);
+  if (S.exam){
+    state.exams.push({at:new Date().toISOString(),correct:S.ok,total,grade:Number(g),unanswered:total-S.res.length,minutes:Math.max(0,Math.round((Date.now()-(S.startedAt||Date.now()))/60000))});
+    state.exams=state.exams.slice(-30);
+    save();
+  }
   const wrong = S.res.filter(r=>!r.ok);
   const left = S.qs.slice(S.res.length);
-  app.innerHTML = header() + `<div class="card" style="text-align:center"><div class="tag">${esc(S.title)} terminado</div><div class="big-num">${S.ok}/${total}</div><div class="mut">${Math.round(p*100)}% correcto</div>${S.exam && left.length ? `<div class="mut">⏳ ${left.length} pregunta(s) sin responder (cuentan como incorrectas).</div>` : ''}${S.exam?`<h2 style="margin-top:10px">Nota estimada: ${g}</h2><div class="mut">(escala chilena, 60% = 4.0)</div>`:''}<div style="margin-top:8px">${p>=.9?'🏆 Nivel 7. Sigue así.':p>=.7?'💪 Vas bien, repasa los errores.':'📚 Repite los errores y vuelve a intentar.'}</div></div>
+  app.innerHTML = header() + `<div class="card" style="text-align:center"><div class="tag">${esc(S.title)} terminado</div><div class="big-num">${S.ok}/${total}</div><div class="mut">${Math.round(p*100)}% correcto</div>${S.exam && left.length ? `<div class="mut">⏳ ${left.length} pregunta(s) sin responder (cuentan como incorrectas).</div>` : ''}${S.exam?`<h2 style="margin-top:10px">Nota estimada: ${g}</h2><div class="mut">(escala chilena, 60% = 4.0)</div>`:''}<div style="margin-top:8px">${p>=.9?'🏆 Excelente resultado. Sigue así.':p>=.7?'💪 Vas bien, repasa los errores.':'📚 Repite los errores y vuelve a intentar.'}</div></div>
   ${wrong.length?`<div class="card"><h2>Para repasar</h2>${wrong.map(r=>`<div class="row"><div><div>${esc(r.q.q.split('\n').pop())}</div><div class="mut">✔ ${esc(correctText(r.q))}${r.q.explain?' — '+esc(r.q.explain):''}</div></div></div>`).join('')}</div>`:''}
   <div class="grid"><button class="big" data-act="home">Inicio</button>${wrong.length?`<button class="pri big" data-act="retry">Repetir errores</button>`:''}</div>`;
   S.retry = wrong.map(r=>r.q).concat(left);
@@ -774,12 +817,13 @@ function learnHome(){
 function openLesson(i){
   clearInterval(timer); S = null; locked = false; clearSession();
   const l = LESSONS[i]; if (!l) return learnHome();
-  L = {i};
+  L = {i,checks:{},attempts:{},firstTry:0};
   const body = l.blocks.map((b,bi)=>renderBlock(b,bi)).join('');
   const last = i === LESSONS.length-1;
   app.innerHTML = header() + `<button class="back" data-act="learn">← Lecciones</button>
   <div class="card"><div class="tag">Lección ${i+1} de ${LESSONS.length} · ${l.min} min</div><h2>${l.emoji} ${esc(l.title)}</h2><div class="mut" style="margin-bottom:8px">📘 ${esc(l.src)}</div>${body}<div id="fb" class="mut"></div></div>
-  <div class="card"><button class="pri big" data-act="ldone" data-i="${i}">✅ Entendí esta lección${last?'':' · siguiente'}</button>
+  <div class="card"><p id="lesson-gate" class="mut">Resuelve las 3 pruebas rápidas para completar la lección. ${state.learned[l.id]?'Ya la habías completado; puedes repasarla.':''}</p>
+  <button class="pri big" id="complete-lesson" data-act="ldone" data-i="${i}" ${state.learned[l.id]?'':'disabled'}>✅ ${state.learned[l.id]?'Continuar lección':'Completar lección'}${last?'':' · siguiente'}</button>
   <div class="grid" style="margin-top:8px">${l.topic?`<button class="big" data-act="lpractice" data-k="${l.topic}">🎯 Practicar el tema</button>`:`<button class="big" data-act="exam">📝 Simulacro</button>`}<button class="big" data-act="learn">📚 Todas las lecciones</button></div></div>`;
   try { window.scrollTo(0,0); } catch(e){}
 }
@@ -793,9 +837,18 @@ app.addEventListener('click', e=>{
   if (a==='lesson') return openLesson(+b.dataset.i);
   if (a==='say') return say(b.dataset.t);
   if (a==='ldone'){
-    const i = +b.dataset.i, l = LESSONS[i];
-    if (l && !state.learned[l.id]){ state.learned[l.id] = true; touchDay(); state.xp += 20; save(); }
-    return (l && i+1 < LESSONS.length) ? openLesson(i+1) : learnHome();
+    const i=+b.dataset.i, l=LESSONS[i];
+    if (!l || L.i!==i) return;
+    if (!state.learned[l.id] && Object.keys(L.checks).length!==3) {
+      const gate=$('#lesson-gate'); if(gate) gate.textContent='Primero responde correctamente las 3 comprobaciones de la lección.';
+      return;
+    }
+    if (!state.learned[l.id]){
+      state.learned[l.id]=true;
+      state.lessonResults[l.id]={firstTry:L.firstTry,total:3,completedAt:dayKey()};
+      touchDay(); state.xp+=20; save();
+    }
+    return i+1<LESSONS.length ? openLesson(i+1) : learnHome();
   }
   if (a==='lpractice'){ const k = b.dataset.k; return startSession(pick(BANK.filter(q=>q.topic===k),10),{title:TOPICS[k]||'Práctica'}); }
   if (a==='lchk'){
@@ -804,15 +857,22 @@ app.addEventListener('click', e=>{
     const k = +b.dataset.k, fb = box.querySelector('.ckfb');
     if (k === blk.answer){
       box.dataset.done = '1';
-      box.querySelectorAll('.opt').forEach((x,i)=>{ x.disabled = true; if (i===blk.answer) x.classList.add('ok'); });
-      fb.innerHTML = '✅ <b>¡Correcto!</b> ' + md(blk.explain||'');
+      if (!L.attempts[+b.dataset.b]) L.firstTry++;
+      L.checks[+b.dataset.b]=true;
+      box.querySelectorAll('.opt').forEach((x,i)=>{ x.disabled=true; if(i===blk.answer) x.classList.add('ok'); });
+      fb.innerHTML='✅ <b>¡Correcto!</b> '+md(blk.explain||'');
+      const n=Object.keys(L.checks).length, gate=$('#lesson-gate'),btn=$('#complete-lesson');
+      if(gate) gate.textContent='Comprobaciones: '+n+'/3. Aciertos al primer intento: '+L.firstTry+'/3.';
+      if(btn && n===3) btn.disabled=false;
     } else {
-      b.classList.add('bad'); b.disabled = true;
-      fb.innerHTML = '❌ Casi. Inténtalo de nuevo. 💡 ' + md(blk.explain||'');
+      L.attempts[+b.dataset.b]=(L.attempts[+b.dataset.b]||0)+1;
+      b.classList.add('bad'); b.disabled=true;
+      fb.innerHTML='❌ Inténtalo de nuevo. 💡 '+md(blk.explain||'');
     }
     return;
   }
   if (a==='plan'){ const topics = todayPlan()[3]; return startSession(pick(BANK.filter(q=>topics.includes(q.topic)),10),{title:'Hoy'}); }
+  if (a==='due') return startSession(pick(BANK.filter(reviewDue),Math.min(20,dueCount())),{title:'Repaso programado'});
   if (a==='smart') return startSession(pick(BANK.filter(q=>q.topic!=='dict'||Math.random()<.3),10),{title:'Inteligente'});
   if (a==='topic') return startSession(pick(BANK.filter(q=>q.topic===b.dataset.k),10),{title:TOPICS[b.dataset.k]});
   if (a==='errors') return startSession(shuffle(BANK.filter(q=>state.wrong[q.id])).slice(0,15),{title:'Mis errores'});
