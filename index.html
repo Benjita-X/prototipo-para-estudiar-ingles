@@ -159,7 +159,7 @@ function say(text, rate=.85){
 }
 
 /* ====== Estado (localStorage) ====== */
-let state = {box:{},wrong:{},xp:0,streak:0,lastDay:'',today:{d:'',n:0},custom:[],learned:{},review:{},lessonResults:{},activity:{},exams:[],skills:{}};
+let state = {box:{},wrong:{},xp:0,streak:0,lastDay:'',today:{d:'',n:0},custom:[],learned:{},review:{},lessonResults:{},activity:{},exams:[],skills:{},help:{}};
 let storageFailed = false;
 try {
   const raw = localStorage.getItem(LS);
@@ -177,6 +177,7 @@ try {
     if (!state.activity || typeof state.activity !== 'object' || Array.isArray(state.activity)) state.activity = {};
     if (!Array.isArray(state.exams)) state.exams = [];
     if (!state.skills || typeof state.skills !== 'object' || Array.isArray(state.skills)) state.skills = {};
+    if (!state.help || typeof state.help !== 'object' || Array.isArray(state.help)) state.help = {};
     state.custom = state.custom.filter(q => q && typeof q === 'object' && typeof q.topic === 'string' && typeof q.type === 'string');
   }
 } catch(e) { storageFailed = true; }
@@ -563,7 +564,7 @@ function touchDay(){
     state.lastDay = t;
   }
 }
-function record(q, ok){
+function record(q, ok, assisted=false){
   touchDay();
   const today=dayKey();
   state.today.n++;
@@ -577,7 +578,7 @@ function record(q, ok){
   daily.n=(daily.n||0)+1; if(ok) daily.ok=(daily.ok||0)+1;
   state.activity[today]=daily;
   if (Object.keys(state.activity).length>180) delete state.activity[Object.keys(state.activity).sort()[0]];
-  if (ok){
+  if (ok && !assisted){
     state.box[q.id]=Math.min(4,(state.box[q.id]||0)+1);
     state.xp+=10;
     const recovered=(state.wrong[q.id] && r.recoveryDay!==today) ? (Number(r.recovery)||0)+1 : (Number(r.recovery)||0);
@@ -616,7 +617,7 @@ function saveSession(){
     localStorage.setItem(LS_SESSION, JSON.stringify({
       ids:S.qs.map(q => q.id), i:S.i, ok:S.ok,
       res:S.res.map(r => ({id:r.q.id,ok:r.ok,user:r.user})),
-      exam:S.exam, title:S.title, end:S.end, startedAt:S.startedAt||Date.now(), answered:locked
+      exam:S.exam, title:S.title, end:S.end, startedAt:S.startedAt||Date.now(), answered:locked, helpUsed:!!S.helpUsed
     }));
   } catch(e) { storageFailed = true; const el=$('#save-warning'); if(el) el.style.display='block'; }
 }
@@ -636,12 +637,12 @@ function restoreSession(){
     const res = old.res.map(r=>({q:byId.get(r.id),ok:r.ok,user:r.user}));
     if (qs.some(q=>!q) || res.some(r=>!r.q || typeof r.ok!=='boolean') ||
         old.res.length!==old.i+(old.answered?1:0)) return false;
-    S = {qs,i:old.i,ok:old.ok,res,exam:old.exam,title:old.title,end:old.end,startedAt:Number(old.startedAt)||Date.now(),finished:false};
+    S = {qs,i:old.i,ok:old.ok,res,exam:old.exam,title:old.title,end:old.end,startedAt:Number(old.startedAt)||Date.now(),helpUsed:!!old.helpUsed,finished:false};
     locked = false;
     if (old.answered) S.i++;
     if (S.i>=S.qs.length) { finish(); return true; }
     if (S.exam){ timer = setInterval(tick,1000); if (S.end<=Date.now()){finish();return true;} }
-    renderQ();
+    S.keepHelp=true;renderQ();
     return true;
   } catch(e){ return false; }
 }
@@ -688,6 +689,7 @@ function home(){
   <div class="card" style="margin-top:12px"><h2>Dominio por tema <span class="mut">· total ${pct}%</span></h2>${rows}</div>
   <div class="card"><h2>📈 Mi avance</h2><p class="mut">Preguntas dominadas: ${totM}/${BANK.length}. Repasos para hoy: ${overdue}.</p>
   <button class="big" data-act="progress">Ver estadísticas y simulacros</button></div>
+  <div class="card"><button class="pri big" data-act="needs">🧭 No sé qué practicar · Ayúdame a elegir</button></div>
   <div class="card"><h2>🎧 Practicar habilidades</h2><div class="grid">
     <button class="big" data-act="listening">🔊 Listening: comprensión</button>
     <button class="big" data-act="speaking">🎙️ Speaking: pronunciación</button>
@@ -717,6 +719,8 @@ function tick(){
 function renderQ(){
   if (!S || !S.qs || S.finished || !S.qs[S.i]) return;
   const q = S.qs[S.i]; const prog = 100*S.i/S.qs.length;
+  if (!S.keepHelp) S.helpUsed=false;
+  S.keepHelp=false;
   let body = '';
   if (q.type==='mcq'){
     S.opts = shuffle(q.options.map((t,i)=>({t,i})));
@@ -732,7 +736,7 @@ function renderQ(){
   }
   app.innerHTML = header() + `<button class="back" data-act="home">← Salir</button>
   <div class="card"><div style="display:flex;justify-content:space-between"><span class="tag">${esc(S.title)} · ${TOPICS[q.topic]||'Mi tema'}</span>${S.exam?'<b id="timer">30:00</b>':`<span class="mut">${S.i+1}/${S.qs.length}</span>`}</div>
-  <div class="bar" style="margin:8px 0"><i style="width:${prog}%"></i></div>${body}<div id="fb"></div></div>`;
+  <div class="bar" style="margin:8px 0"><i style="width:${prog}%"></i></div>${body}${S.exam?'':'<div style="margin-top:12px"><button class="sm" data-act="help">💡 No entiendo esta pregunta</button><div id="help-panel" aria-live="polite"></div></div>'}<div id="fb" aria-live="polite"></div></div>`;
   if (q.type==='order') drawOrder();
   if (q.type==='dict' || q.audio) setTimeout(()=>{ if (S && S.qs && !S.finished && S.qs[S.i]===q) say(q.audio||q.answer); },200);
   const inp = $('#ans'); if (inp){ inp.focus(); inp.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.isComposing){ e.preventDefault(); answer(inp.value); } }); }
@@ -752,15 +756,16 @@ function answer(user){
   if (q.type === 'order' && (!S.chosen || !S.pool || S.chosen.length !== S.pool.length)) return;
   locked = true;
   const ok = isRight(q, user);
-  record(q, ok); if (ok) S.ok++;
-  S.res.push({q, ok, user});
+  const assisted=!!S.helpUsed;
+  record(q, ok, assisted); if (ok) S.ok++;
+  S.res.push({q, ok, user, assisted});
   saveSession();
   if (S.exam){ next(); return; }
   if (q.type==='mcq'){
     document.querySelectorAll('.opt').forEach((b,k)=>{ const o=S.opts[k]; if(o.i===q.answer) b.classList.add('ok'); else if(k===user_k(user)) b.classList.add('bad'); });
   }
   const praise = ['¡Bien!','¡Exacto!','¡Muy bien!','¡Eso es!'][Math.floor(Math.random()*4)];
-  $('#fb').innerHTML = `<div class="fb ${ok?'ok':'bad'}"><b>${ok?'✅ '+praise+' +10 XP':'❌ Respuesta correcta: '+esc(correctText(q))}</b>${q.explain?`<div class="mut" style="margin-top:4px">💡 ${esc(q.explain)}</div>`:''}${q.type==='dict'?`<div style="margin-top:4px">${esc(q.answer)}</div>`:''}</div><button class="pri big" data-act="next" id="nextbtn">Siguiente →</button>`;
+  $('#fb').innerHTML = `<div class="fb ${ok?'ok':'bad'}"><b>${ok?'✅ '+praise+(assisted?' · Practicado con ayuda (+2 XP)':' +10 XP'):'❌ Respuesta correcta: '+esc(correctText(q))}</b>${q.explain?`<div class="mut" style="margin-top:4px">💡 ${esc(q.explain)}</div>`:''}${q.type==='dict' || q.audio?`<div style="margin-top:4px">🔊 ${esc(q.audio||q.answer)}</div>`:''}</div><button class="pri big" data-act="next" id="nextbtn">Siguiente →</button>`;
   const nb=$('#nextbtn'); if(nb) nb.focus();
   const hdr = document.querySelector('.pills'); if (hdr) { const match = header().match(/<div class="pills">([\s\S]*?)<\/div><\/div>/); if (match) hdr.innerHTML = match[1]; }
 }
@@ -781,7 +786,7 @@ function finish(){
     state.exams=state.exams.slice(-30);
     save();
   }
-  const wrong = S.res.filter(r=>!r.ok);
+  const wrong = S.res.filter(r=>!r.ok || r.assisted);
   const left = S.qs.slice(S.res.length);
   app.innerHTML = header() + `<div class="card" style="text-align:center"><div class="tag">${esc(S.title)} terminado</div><div class="big-num">${S.ok}/${total}</div><div class="mut">${Math.round(p*100)}% correcto</div>${S.exam && left.length ? `<div class="mut">⏳ ${left.length} pregunta(s) sin responder (cuentan como incorrectas).</div>` : ''}${S.exam?`<h2 style="margin-top:10px">Nota estimada: ${g}</h2><div class="mut">(escala chilena, 60% = 4.0)</div>`:''}<div style="margin-top:8px">${p>=.9?'🏆 Excelente resultado. Sigue así.':p>=.7?'💪 Vas bien, repasa los errores.':'📚 Repite los errores y vuelve a intentar.'}</div></div>
   ${wrong.length?`<div class="card"><h2>Para repasar</h2>${wrong.map(r=>`<div class="row"><div><div>${esc(r.q.q.split('\n').pop())}</div><div class="mut">✔ ${esc(correctText(r.q))}${r.q.explain?' — '+esc(r.q.explain):''}</div></div></div>`).join('')}</div>`:''}
@@ -888,6 +893,46 @@ function openLesson(i){
   try { window.scrollTo(0,0); } catch(e){}
 }
 
+/* ====== Estudiar justo lo que cuesta ====== */
+function needsHome(){
+  clearInterval(timer);S=null;locked=false;clearSession();
+  const untouched=BANK.filter(q=>state.box[q.id]===undefined);
+  const weak=BANK.filter(q=>state.wrong[q.id]||state.help[q.id]);
+  const weaknesses=Object.keys(TOPICS).map(k=>{
+    const a=BANK.filter(q=>q.topic===k),wrong=a.filter(q=>state.wrong[q.id]).length;
+    const tried=a.filter(q=>state.box[q.id]!==undefined).length;
+    const masteredN=a.filter(mastered).length;
+    return {k,label:TOPICS[k],total:a.length,wrong,tried,mastered:masteredN};
+  });
+  const target=weaknesses.filter(t=>t.wrong>0).sort((a,b)=>b.wrong-a.wrong)[0] ||
+    weaknesses.find(t=>todayPlan()[3].includes(t.k)) || weaknesses[0];
+  app.innerHTML=header()+'<button class="back" data-act="home">← Inicio</button>'+
+    '<div class="card"><h2>🎯 ¿Qué necesitas practicar ahora?</h2>'+
+    '<p class="mut">No hace falta saber por dónde empezar. Elige cuánto tiempo tienes o repasa lo que más te cuesta.</p>'+
+    '<div class="grid"><button class="pri big" data-act="quick5">⚡ 5 preguntas (2–4 min)</button>'+
+    '<button class="big" data-act="quick10">🧠 10 preguntas (5–8 min)</button>'+
+    '<button class="big" data-act="weak" '+(weak.length?'':'disabled')+'>🔁 Lo que me cuesta ('+weak.length+')</button>'+
+    '<button class="big" data-act="new" '+(untouched.length?'':'disabled')+'>✨ Ejercicios que no he visto ('+untouched.length+')</button></div></div>'+
+    '<div class="card"><h2>💡 Mi recomendación</h2><p class="mut">Según tus respuestas y el plan actual, empieza por: <b>'+esc(target.label)+'</b>.</p>'+
+    '<button class="pri big" data-act="needtopic" data-k="'+esc(target.k)+'">Practicar este tema</button></div>'+
+    '<div class="card"><h2>Quiero entender un tema concreto</h2>'+
+    weaknesses.map(t=>'<div class="row"><div style="flex:1"><b>'+esc(t.label)+'</b><div class="mut">'+t.mastered+'/'+t.total+' dominadas · '+t.wrong+' por repasar</div></div>'+
+    '<button class="sm" data-act="needlesson" data-k="'+esc(t.k)+'">📖 Explicación</button>'+
+    '<button class="sm" data-act="needtopic" data-k="'+esc(t.k)+'">Practicar</button></div>').join('')+'</div>';
+}
+function openHelp(){
+  if(!S || !S.qs || S.exam || S.finished || locked)return;
+  const q=S.qs[S.i];
+  if(!q)return;
+  if(!S.helpUsed){state.help[q.id]=(Number(state.help[q.id])||0)+1;S.helpUsed=true;save();saveSession();}
+  const l=LESSONS.find(l=>l.topic===q.topic);
+  const rule=l?.blocks?.find(b=>b.t==='rule'||b.t==='tip');
+  const txt=rule?rule.x.replace(/\*\*/g,''):'Revisa el sujeto, el tiempo verbal y la palabra que falta.';
+  const panel=$('#help-panel');
+  if(panel)panel.innerHTML='<div class="note" role="status"><b>Vamos por partes</b><p>'+esc(txt)+'</p>'+
+    (q.explain?'<p><b>Pista:</b> '+esc(q.explain)+'</p>':'')+
+    '<p class="mut">Esta respuesta contará como práctica asistida: no aumentará tu dominio hasta que la resuelvas sin ayuda.</p></div>';
+}
 /* ====== Listening y speaking sin cuentas ni servicios propios ====== */
 function listeningHome(){
   clearInterval(timer);S=null;locked=false;clearSession();
@@ -1004,6 +1049,23 @@ app.addEventListener('click', e=>{
   const a = b.dataset.act;
   if (a==='home'){if(speechRecognizer){try{speechRecognizer.abort()}catch(e){}speechRecognizer=null;}return home();}
   if (a==='progress') return progressScreen();
+  if (a==='needs') return needsHome();
+  if (a==='help') return openHelp();
+  if (a==='quick5') return startSession(pick(BANK,5),{title:'Práctica rápida'});
+  if (a==='quick10') return startSession(pick(BANK,10),{title:'Práctica corta'});
+  if (a==='weak'){
+    const pool=BANK.filter(q=>state.wrong[q.id]||state.help[q.id]);
+    return startSession(pick(pool,Math.min(15,pool.length)),{title:'Mis dificultades'});
+  }
+  if (a==='new'){
+    const pool=BANK.filter(q=>state.box[q.id]===undefined);
+    return startSession(pick(pool,Math.min(10,pool.length)),{title:'Nuevos ejercicios'});
+  }
+  if (a==='needtopic') return startSession(pick(BANK.filter(q=>q.topic===b.dataset.k),10),{title:TOPICS[b.dataset.k]||'Práctica'});
+  if (a==='needlesson'){
+    const idx=lessonIdx(b.dataset.k);
+    return idx>=0?openLesson(idx):learnHome();
+  }
   if (a==='export') return exportProgress();
   if (a==='listenquiz') return startSession(pick(BANK.filter(q=>q.topic==='dict'&&q.audio),10),{title:'Comprensión auditiva'});
   if (a==='dictquiz') return startSession(pick(BANK.filter(q=>q.type==='dict'),10),{title:'Dictado'});
