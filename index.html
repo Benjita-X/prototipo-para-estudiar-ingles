@@ -52,6 +52,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--pri)}
 const EXAM = new Date('2026-12-04T08:00:00');
 const GOAL = 20;
 const LS = 'ing_es4_trainer_v1';
+const LS_SESSION = 'ing_es4_trainer_session_v1';
 const TOPICS = {be:'Was / Were',reg:'Regulares (-ed)',irr:'Irregulares',neg:"Negativo (didn't)",q:'Preguntas (Did…?)',conn:'Conectores',time:'Tiempo y clima',read:'Lectura',dict:'Listening (dictado)'};
 const PLAN = [ // [desde, hasta, titulo, temas]
   ['2026-11-13','2026-11-15','Was/were, conectores y tiempo',['be','conn','time']],
@@ -70,13 +71,52 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 const nz = s => String(s).toLowerCase().replace(/[’‘`]/g,"'").replace(/[.?!,;:]/g,'').replace(/\s+/g,' ').trim();
 const shuffle = a => { a = [...a]; for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
 const hid = s => { let h=0; for (const c of s) h=(h*31+c.charCodeAt(0))|0; return (h>>>0).toString(36); };
+const questionId = q => hid(q.topic+'|'+q.type+'|'+q.q+'|'+(q.answer||'')+'|'+((q.answers||[]).join('/')));
 const dayKey = (d=new Date()) => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-function say(text, rate=.85){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='en-US'; u.rate=rate; speechSynthesis.speak(u);}catch(e){} }
+function say(text, rate=.85){
+  try {
+    if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') throw new Error('Voz no disponible');
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = rate;
+    u.onerror = () => {
+      const fb = $('#fb');
+      if (fb && S && S.qs && !S.finished) fb.textContent = '⚠️ El audio no se pudo reproducir. Comprueba la voz de inglés del navegador.';
+    };
+    speechSynthesis.speak(u);
+    return true;
+  } catch(e) {
+    const fb = $('#fb');
+    if (fb) fb.textContent = '⚠️ Este navegador no pudo reproducir el audio. Prueba Chrome o Edge.';
+    return false;
+  }
+}
 
 /* ====== Estado (localStorage) ====== */
 let state = {box:{},wrong:{},xp:0,streak:0,lastDay:'',today:{d:'',n:0},custom:[]};
-try { const r = localStorage.getItem(LS); if (r) state = Object.assign(state, JSON.parse(r)); } catch(e){}
-const save = () => { try{ localStorage.setItem(LS, JSON.stringify(state)); }catch(e){} };
+let storageFailed = false;
+try {
+  const raw = localStorage.getItem(LS);
+  if (raw) {
+    const loaded = JSON.parse(raw);
+    if (!loaded || typeof loaded !== 'object' || Array.isArray(loaded)) throw new Error('Estado inválido');
+    Object.assign(state, loaded);
+    if (!state.box || typeof state.box !== 'object' || Array.isArray(state.box)) state.box = {};
+    if (!state.wrong || typeof state.wrong !== 'object' || Array.isArray(state.wrong)) state.wrong = {};
+    if (!state.today || typeof state.today !== 'object') state.today = {d:'',n:0};
+    if (!Array.isArray(state.custom)) state.custom = [];
+    state.custom = state.custom.filter(q => q && typeof q === 'object' && typeof q.topic === 'string' && typeof q.type === 'string');
+  }
+} catch(e) { storageFailed = true; }
+const save = () => {
+  try { localStorage.setItem(LS, JSON.stringify(state)); storageFailed = false; const warning = $('#save-warning'); if (warning) warning.style.display = 'none'; return true; }
+  catch(e) {
+    storageFailed = true;
+    const warning = $('#save-warning');
+    if (warning) warning.style.display = 'block';
+    return false;
+  }
+};
 
 /* ====== Banco de preguntas ====== */
 const M = (topic,q,opts,ans,exp) => ({topic,type:'mcq',q,options:opts,answer:ans,explain:exp||''});
@@ -174,7 +214,7 @@ function buildBank(){
   IRR.forEach(([b,p,es]) => out.push({topic:'irr',type:'type',q:`Pasado de «${b}» (${es})`,answers:[p],explain:`${b} → ${p}`,card:{b,p,es}}));
   REG.forEach(([b,p]) => out.push({topic:'reg',type:'type',q:`Pasado de «${b}»`,answers:[p],explain:`${b} → ${p}`}));
   (state.custom||[]).forEach(q => out.push(q));
-  out.forEach(q => { q.id = hid(q.topic+'|'+q.type+'|'+q.q+'|'+(q.answer||'')+'|'+((q.answers||[]).join('/'))); });
+  out.forEach(q => { q.id = questionId(q); });
   return out;
 }
 let BANK = buildBank();
@@ -225,20 +265,61 @@ function isRight(q, user){
 /* ====== Pantallas ====== */
 const app = $('#app');
 let S = null, timer = null;
+function clearSession(){
+  try { localStorage.removeItem(LS_SESSION); } catch(e){}
+}
+function saveSession(){
+  if (!S || !S.qs || S.finished) return;
+  try {
+    localStorage.setItem(LS_SESSION, JSON.stringify({
+      ids:S.qs.map(q => q.id), i:S.i, ok:S.ok,
+      res:S.res.map(r => ({id:r.q.id,ok:r.ok,user:r.user})),
+      exam:S.exam, title:S.title, end:S.end, answered:locked
+    }));
+  } catch(e) { storageFailed = true; const el=$('#save-warning'); if(el) el.style.display='block'; }
+}
+function restoreSession(){
+  try {
+    const raw = localStorage.getItem(LS_SESSION);
+    if (!raw) return false;
+    const old = JSON.parse(raw);
+    if (!old || !Array.isArray(old.ids) || !old.ids.length || old.ids.length>100 ||
+        !Number.isInteger(old.i) || old.i<0 || old.i>=old.ids.length ||
+        !Number.isInteger(old.ok) || old.ok<0 || old.ok>old.ids.length ||
+        !Array.isArray(old.res) || old.res.length>old.ids.length ||
+        typeof old.title!=='string' || old.title.length>150 ||
+        typeof old.exam!=='boolean' || !Number.isFinite(old.end)) return false;
+    const byId = new Map(BANK.map(q => [q.id,q]));
+    const qs = old.ids.map(id=>byId.get(id));
+    const res = old.res.map(r=>({q:byId.get(r.id),ok:r.ok,user:r.user}));
+    if (qs.some(q=>!q) || res.some(r=>!r.q || typeof r.ok!=='boolean') ||
+        old.res.length!==old.i+(old.answered?1:0)) return false;
+    S = {qs,i:old.i,ok:old.ok,res,exam:old.exam,title:old.title,end:old.end,finished:false};
+    locked = false;
+    if (old.answered) S.i++;
+    if (S.i>=S.qs.length) { finish(); return true; }
+    if (S.exam){ timer = setInterval(tick,1000); if (S.end<=Date.now()){finish();return true;} }
+    renderQ();
+    return true;
+  } catch(e){ return false; }
+}
 
 function header(){
   const days = Math.max(0, Math.ceil((EXAM - new Date())/864e5));
   const lvl = Math.floor(state.xp/200)+1;
-  return `<div class="top"><h1>🇬🇧 ES4 Trainer</h1><div class="pills"><span class="pill">📅 ${days} días</span><span class="pill">🔥 ${state.streak}</span><span class="pill">⭐ Nv ${lvl} · ${state.xp} XP</span></div></div>`;
+  return `<div class="top"><h1>🇬🇧 ES4 Trainer</h1><div class="pills"><span class="pill">📅 ${days} días</span><span class="pill">🔥 ${state.streak}</span><span class="pill">⭐ Nv ${lvl} · ${state.xp} XP</span></div></div><div id="save-warning" class="fb bad" role="alert" style="display:${storageFailed?'block':'none'}">⚠️ No se pudo guardar el progreso en este navegador. Revisa el almacenamiento antes de cerrar la aplicación.</div>`;
 }
 
 function todayPlan(){
   const t = dayKey();
-  return PLAN.find(p => t >= p[0] && t <= p[1]) || PLAN[PLAN.length-1];
+  const active = PLAN.find(p => t >= p[0] && t <= p[1]);
+  if (active) return active;
+  if (t < PLAN[0][0]) return PLAN[0];
+  return ['', '', 'Repaso general después de la ES4', Object.keys(TOPICS)];
 }
 
 function home(){
-  clearInterval(timer); S = null; BANK = buildBank();
+  clearInterval(timer); S = null; locked = false; clearSession(); BANK = buildBank();
   const t = dayKey(); const n = state.today.d===t ? state.today.n : 0;
   const plan = todayPlan();
   const wrongN = BANK.filter(q => state.wrong[q.id]).length;
@@ -265,18 +346,22 @@ function home(){
 
 function startSession(qs, opts={}){
   if (!qs.length){ alert('No hay preguntas para esta sesión.'); return; }
-  S = {qs, i:0, ok:0, res:[], exam:!!opts.exam, title:opts.title||'Sesión', end: opts.exam ? Date.now()+30*60000 : 0};
+  locked = false;
+  S = {qs, i:0, ok:0, res:[], exam:!!opts.exam, title:opts.title||'Sesión', end: opts.exam ? Date.now()+30*60000 : 0, finished:false};
   clearInterval(timer);
   if (S.exam){ timer = setInterval(tick,1000); }
+  saveSession();
   renderQ();
 }
 function tick(){
+  if (!S || !S.exam || S.finished) return;
   const left = Math.max(0, S.end - Date.now());
   const el = $('#timer'); if (el) el.textContent = Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0');
   if (left<=0) finish();
 }
 
 function renderQ(){
+  if (!S || !S.qs || S.finished || !S.qs[S.i]) return;
   const q = S.qs[S.i]; const prog = 100*S.i/S.qs.length;
   let body = '';
   if (q.type==='mcq'){
@@ -285,7 +370,7 @@ function renderQ(){
   } else if (q.type==='type'){
     body = `<div class="q">${esc(q.q)}</div><input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Escribe tu respuesta"><div style="margin-top:10px"><button class="pri big" data-act="check">Comprobar</button></div>`;
   } else if (q.type==='order'){
-    S.pool = shuffle(q.answer.split(' ').map((w,i)=>({w,i}))); S.chosen = [];
+    S.pool = shuffle(q.answer.trim().split(/\s+/).map((w,i)=>({w,i}))); S.chosen = [];
     if (S.pool.length>1 && S.pool.every((x,k)=>x.i===k)) S.pool.reverse();
     body = `<div class="q">${esc(q.q)}</div><div class="chips" id="chosen"></div><div class="chips" id="pool" style="border-style:solid"></div><button class="pri big" data-act="checkorder">Comprobar</button>`;
   } else if (q.type==='dict'){
@@ -295,8 +380,8 @@ function renderQ(){
   <div class="card"><div style="display:flex;justify-content:space-between"><span class="tag">${esc(S.title)} · ${TOPICS[q.topic]||'Mi tema'}</span>${S.exam?'<b id="timer">30:00</b>':`<span class="mut">${S.i+1}/${S.qs.length}</span>`}</div>
   <div class="bar" style="margin:8px 0"><i style="width:${prog}%"></i></div>${body}<div id="fb"></div></div>`;
   if (q.type==='order') drawOrder();
-  if (q.type==='dict') setTimeout(()=>say(q.answer),200);
-  const inp = $('#ans'); if (inp){ inp.focus(); inp.addEventListener('keydown',e=>{ if(e.key==='Enter') answer(inp.value); }); }
+  if (q.type==='dict') setTimeout(()=>{ if (S && S.qs && !S.finished && S.qs[S.i]===q) say(q.answer); },200);
+  const inp = $('#ans'); if (inp){ inp.focus(); inp.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.isComposing){ e.preventDefault(); answer(inp.value); } }); }
   if (S.exam) tick();
 }
 function drawOrder(){
@@ -306,37 +391,47 @@ function drawOrder(){
 
 let locked = false;
 function answer(user){
-  if (locked && !S.exam) return;
-  const q = S.qs[S.i]; const ok = isRight(q, user);
+  if (!S || !S.qs || S.finished || locked) return;
+  const q = S.qs[S.i];
+  if (!q) return;
+  if (q.type !== 'mcq' && !String(user ?? '').trim()) return;
+  if (q.type === 'order' && (!S.chosen || !S.pool || S.chosen.length !== S.pool.length)) return;
+  locked = true;
+  const ok = isRight(q, user);
   record(q, ok); if (ok) S.ok++;
   S.res.push({q, ok, user});
+  saveSession();
   if (S.exam){ next(); return; }
-  locked = true;
   if (q.type==='mcq'){
     document.querySelectorAll('.opt').forEach((b,k)=>{ const o=S.opts[k]; if(o.i===q.answer) b.classList.add('ok'); else if(k===user_k(user)) b.classList.add('bad'); });
   }
   const praise = ['¡Bien!','¡Exacto!','¡Muy bien!','¡Eso es!'][Math.floor(Math.random()*4)];
   $('#fb').innerHTML = `<div class="fb ${ok?'ok':'bad'}"><b>${ok?'✅ '+praise+' +10 XP':'❌ Respuesta correcta: '+esc(correctText(q))}</b>${q.explain?`<div class="mut" style="margin-top:4px">💡 ${esc(q.explain)}</div>`:''}${q.type==='dict'?`<div style="margin-top:4px">${esc(q.answer)}</div>`:''}</div><button class="pri big" data-act="next" id="nextbtn">Siguiente →</button>`;
   const nb=$('#nextbtn'); if(nb) nb.focus();
-  const hdr = document.querySelector('.pills'); if (hdr) hdr.innerHTML = header().match(/<div class="pills">([\s\S]*?)<\/div><\/div>$/)[1];
+  const hdr = document.querySelector('.pills'); if (hdr) { const match = header().match(/<div class="pills">([\s\S]*?)<\/div><\/div>/); if (match) hdr.innerHTML = match[1]; }
 }
 function user_k(u){ return S.lastK; }
-function next(){ locked=false; S.i++; if (S.i>=S.qs.length) finish(); else renderQ(); }
+function next(){ if (!S || !S.qs || S.finished) return; locked=false; S.i++; if (S.i>=S.qs.length) finish(); else { saveSession(); renderQ(); } }
 
 function gradeOf(p){ return p>=.6 ? 4+3*(p-.6)/.4 : 1+3*p/.6; }
 function finish(){
+  if (!S || !S.qs || S.finished) return;
+  S.finished = true;
+  locked = true;
   clearInterval(timer);
+  clearSession();
   // en simulacro, lo no respondido cuenta como incorrecto
   const total = S.qs.length; const p = S.ok/total; const g = gradeOf(p).toFixed(1);
   const wrong = S.res.filter(r=>!r.ok);
   const left = S.qs.slice(S.res.length);
-  app.innerHTML = header() + `<div class="card" style="text-align:center"><div class="tag">${esc(S.title)} terminado</div><div class="big-num">${S.ok}/${total}</div><div class="mut">${Math.round(p*100)}% correcto</div>${S.exam?`<h2 style="margin-top:10px">Nota estimada: ${g}</h2><div class="mut">(escala chilena, 60% = 4.0)</div>`:''}<div style="margin-top:8px">${p>=.9?'🏆 Nivel 7. Sigue así.':p>=.7?'💪 Vas bien, repasa los errores.':'📚 Repite los errores y vuelve a intentar.'}</div></div>
+  app.innerHTML = header() + `<div class="card" style="text-align:center"><div class="tag">${esc(S.title)} terminado</div><div class="big-num">${S.ok}/${total}</div><div class="mut">${Math.round(p*100)}% correcto</div>${S.exam && left.length ? `<div class="mut">⏳ ${left.length} pregunta(s) sin responder (cuentan como incorrectas).</div>` : ''}${S.exam?`<h2 style="margin-top:10px">Nota estimada: ${g}</h2><div class="mut">(escala chilena, 60% = 4.0)</div>`:''}<div style="margin-top:8px">${p>=.9?'🏆 Nivel 7. Sigue así.':p>=.7?'💪 Vas bien, repasa los errores.':'📚 Repite los errores y vuelve a intentar.'}</div></div>
   ${wrong.length?`<div class="card"><h2>Para repasar</h2>${wrong.map(r=>`<div class="row"><div><div>${esc(r.q.q.split('\n').pop())}</div><div class="mut">✔ ${esc(correctText(r.q))}${r.q.explain?' — '+esc(r.q.explain):''}</div></div></div>`).join('')}</div>`:''}
   <div class="grid"><button class="big" data-act="home">Inicio</button>${wrong.length?`<button class="pri big" data-act="retry">Repetir errores</button>`:''}</div>`;
   S.retry = wrong.map(r=>r.q).concat(left);
 }
 
 function cards(){
+  clearSession();
   const irr = BANK.filter(q=>q.card);
   const deck = pick(irr, Math.min(12, irr.length));
   S = {deck, i:0, show:false}; clearInterval(timer);
@@ -352,6 +447,7 @@ function renderCard(){
 }
 
 function importScreen(){
+  clearSession();
   const prompt = `Eres profesor de inglés nivel A1 (CEFR) para un estudiante chileno. Genera 30 preguntas para practicar "Simple past (was/were, verbos regulares e irregulares, afirmativo, negativo y preguntas con did), conectores and/but/because y expresiones de tiempo (yesterday, last week, ago)". Usa el libro Wide Angle Level 1B, unidades 7 y 8, como nivel de dificultad. Devuelve SOLO un arreglo JSON válido, sin texto extra ni bloques de código, con objetos de estos 4 formatos:
 {"topic":"neg","type":"mcq","q":"I ___ go to school yesterday.","options":["didn't","don't","wasn't"],"answer":0,"explain":"didn't + verbo base"}
 {"topic":"q","type":"type","q":"Did they like the food? — No, they ___.","answers":["didn't"],"explain":"respuesta corta"}
@@ -375,7 +471,8 @@ function doImport(){
     data = JSON.parse(raw); if (!Array.isArray(data)) data = data.questions;
     if (!Array.isArray(data)) throw new Error('no es un arreglo');
   }catch(e){ msg.textContent='❌ No pude leer el JSON: '+e.message; return; }
-  let ok=0, bad=0;
+  let ok=0, bad=0, duplicates=0;
+  const known = new Set(BANK.map(q => q.id));
   data.forEach(q=>{
     try{
       if (!q || typeof q.type!=='string') throw 0;
@@ -386,11 +483,15 @@ function doImport(){
       else if (q.type==='order'){ if(!q.answer||String(q.answer).split(' ').length<3) throw 0; n = O(topic,String(q.answer),String(q.explain||'')); }
       else if (q.type==='dict'){ if(!q.answer) throw 0; n = D(String(q.answer)); }
       else throw 0;
-      state.custom.push(n); ok++;
+      const id = questionId(n);
+       if (known.has(id)) { duplicates++; return; }
+       n.id = id;
+       known.add(id);
+       state.custom.push(n); ok++;
     }catch(e){ bad++; }
   });
   save(); BANK = buildBank();
-  msg.textContent = `✅ Importadas: ${ok}. ${bad?'Con error (ignoradas): '+bad+'.':''}`;
+  msg.textContent = `✅ Importadas: ${ok}. ${bad?'Con error (ignoradas): '+bad+'. ':''}${duplicates?'Duplicadas (ignoradas): '+duplicates+'.':''}`;
 }
 
 /* ====== Eventos ====== */
@@ -410,7 +511,14 @@ app.addEventListener('click', e=>{
   }
   if (a==='cards') return cards();
   if (a==='import') return importScreen();
-  if (a==='copyprompt'){ navigator.clipboard.writeText(S.prompt).then(()=>{b.textContent='✅ Copiado';}).catch(()=>{ $('#imp').value=S.prompt; b.textContent='Copia el texto del cuadro'; }); return; }
+  if (a==='copyprompt'){
+     const fallback = () => { $('#imp').value=S.prompt; b.textContent='Copia el texto del cuadro'; };
+     try {
+       if (!navigator.clipboard || !navigator.clipboard.writeText) return fallback();
+       navigator.clipboard.writeText(S.prompt).then(()=>{b.textContent='✅ Copiado';}).catch(fallback);
+     } catch(e) { fallback(); }
+     return;
+   }
   if (a==='doimport') return doImport();
   if (a==='clearcustom'){ if(confirm('¿Borrar las preguntas importadas?')){ state.custom=[]; save(); BANK=buildBank(); importScreen(); } return; }
   if (a==='flip'){ S.show=!S.show; return renderCard(); }
@@ -424,10 +532,17 @@ app.addEventListener('click', e=>{
   if (a==='next') return next();
   if (a==='pick'){ const x=S.pool.find(x=>x.i===+b.dataset.i && !S.chosen.includes(x)); if(x){S.chosen.push(x); drawOrder();} return; }
   if (a==='unpick'){ S.chosen=S.chosen.filter(x=>x.i!==+b.dataset.i); return drawOrder(); }
-  if (a==='checkorder'){ if(locked) return; return answer(S.chosen.map(x=>x.w).join(' ')); }
+  if (a==='checkorder'){
+     if (locked) return;
+     if (!S.chosen || !S.pool || S.chosen.length !== S.pool.length) {
+       const fb = $('#fb'); if (fb) fb.textContent = 'Selecciona todas las palabras antes de comprobar.';
+       return;
+     }
+     return answer(S.chosen.map(x=>x.w).join(' '));
+   }
 });
 
-home();
+if (!restoreSession()) home();
 </script>
 </body>
 </html>
