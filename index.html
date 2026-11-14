@@ -534,6 +534,28 @@ const LESSONS = [
 ];
 
 /* ====== Selección con repetición espaciada ====== */
+function dailyQuestions(n=10){
+  const planTopics=todayPlan()[3];
+  const due=BANK.filter(reviewDue);
+  const fromDue=pick(due,Math.min(4,n,due.length));
+  const picked=new Set(fromDue.map(q=>q.id));
+  const planned=BANK.filter(q=>planTopics.includes(q.topic)&&!picked.has(q.id));
+  const fromPlan=pick(planned,n-fromDue.length);
+  for(const q of fromPlan)picked.add(q.id);
+  const fill=BANK.filter(q=>!picked.has(q.id));
+  return shuffle([...fromDue,...fromPlan,...pick(fill,n-fromDue.length-fromPlan.length)]);
+}
+function smartQuestions(n=10){
+  const due=BANK.filter(reviewDue);
+  const difficult=BANK.filter(q=>state.wrong[q.id]||state.help[q.id]);
+  const picked=new Set(),list=[];
+  for(const [pool,limit] of [[due,Math.min(4,n)],[difficult,Math.min(3,n)],[BANK,n]]){
+    const extra=pick(pool.filter(q=>!picked.has(q.id)),Math.min(limit,n-list.length));
+    for(const q of extra){picked.add(q.id);list.push(q);}
+  }
+  return shuffle(list);
+}
+
 // Leitner por nivel + agenda de repaso en días diferentes.
 const reviewDue = q => { const r=state.review[q.id]; return r && typeof r.due==='string' && r.due<=dayKey(); };
 const dueCount = () => BANK.filter(reviewDue).length;
@@ -829,7 +851,8 @@ function renderCard(){
   app.innerHTML = header() + `<button class="back" data-act="home">← Salir</button>
   <div class="card"><div class="tag">Ficha ${S.i+1}/${S.deck.length}</div>
   <div class="flash" data-act="flip"><div class="w">${esc(c.b)}</div><div class="mut">${esc(c.es)}</div>${S.show?`<div class="w" style="color:var(--pri)">${esc(c.p)}</div>`:'<div class="mut">Toca para ver el pasado</div>'}</div></div>
-  ${S.show?`<div class="grid"><button class="big" data-act="cardno">😅 No la sabía</button><button class="pri big" data-act="cardyes">😎 La sabía</button></div>`:''}`;
+  ${S.show?`<div class="grid"><button class="big" data-act="cardno">😅 No la sabía</button><button class="pri big" data-act="cardyes">😎 La sabía</button></div>`:''}
+  <p class="mut">Primero intenta recordar, después toca la ficha. Marcar «La sabía» es autoevaluación: no confirma dominio. Para comprobarlo usa la práctica de escritura sin pistas.</p>`;
 }
 
 function importScreen(){
@@ -1188,9 +1211,9 @@ app.addEventListener('click', e=>{
     }
     return;
   }
-  if (a==='plan'){ const topics = todayPlan()[3]; return startSession(pick(BANK.filter(q=>topics.includes(q.topic)),10),{title:'Hoy'}); }
+  if (a==='plan') return startSession(dailyQuestions(10),{title:'Hoy'});
   if (a==='due') return startSession(pick(BANK.filter(reviewDue),Math.min(20,dueCount())),{title:'Repaso programado'});
-  if (a==='smart') return startSession(pick(BANK.filter(q=>q.topic!=='dict'||Math.random()<.3),10),{title:'Inteligente'});
+  if (a==='smart') return startSession(smartQuestions(10),{title:'Inteligente'});
   if (a==='topic') return startSession(pick(BANK.filter(q=>q.topic===b.dataset.k),10),{title:TOPICS[b.dataset.k]});
   if (a==='errors') return startSession(shuffle(BANK.filter(q=>state.wrong[q.id])).slice(0,15),{title:'Mis errores'});
   if (a==='exam'){
@@ -1212,7 +1235,19 @@ app.addEventListener('click', e=>{
   if (a==='doimport') return doImport();
   if (a==='clearcustom'){ if(confirm('¿Borrar las preguntas importadas?')){ state.custom=[]; save(); BANK=buildBank(); importScreen(); } return; }
   if (a==='flip'){ S.show=!S.show; return renderCard(); }
-  if (a==='cardyes'||a==='cardno'){ const q=S.deck[S.i]; record(q,a==='cardyes'); S.i++; S.show=false; return renderCard(); }
+  if (a==='cardyes'||a==='cardno'){
+    const q=S.deck[S.i];
+    touchDay();
+    state.today.n++;
+    // Una ficha revelada no es una prueba independiente: solo autovaloración.
+    if(a==='cardno'){
+      state.help[q.id]=(Number(state.help[q.id])||0)+1;
+      const r=state.review[q.id]&&typeof state.review[q.id]==='object'?state.review[q.id]:{};
+      r.due=dayKey();state.review[q.id]=r;
+    }
+    state.xp+=2;save();
+    S.i++;S.show=false;return renderCard();
+  }
   if (a==='retry'){ const r=S.retry; return startSession(r,{title:'Repaso'}); }
   if (!S || !S.qs) return;
   if (a==='mcq'){ if(locked) return; const k=+b.dataset.k; S.lastK=k; return answer(S.opts[k].i); }
