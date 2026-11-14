@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>English ES4 Trainer</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1c2233;--mut:#6b7488;--pri:#4f46e5;--pri2:#eef0ff;--ok:#16a34a;--okbg:#e7f8ee;--bad:#dc2626;--badbg:#fdeceb;--line:#e3e7f0;--warn:#f59e0b}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1320;--card:#181d30;--ink:#eef1fb;--mut:#98a2bd;--pri:#818cf8;--pri2:#23284a;--ok:#4ade80;--okbg:#12301f;--bad:#f87171;--badbg:#3a1618;--line:#2a3150;--warn:#fbbf24}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#app{max-width:720px;margin:0 auto;padding:16px 16px 48px}
+h1{font-size:22px;margin:0}h2{font-size:18px;margin:0 0 8px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-size:13px;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.mut{color:var(--mut);font-size:14px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px 14px}
+button:hover{border-color:var(--pri)}
+button.pri{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:700}
+button.big{width:100%;padding:14px;font-size:16px}
+button.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--pri);border-radius:99px}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;font-size:17px}
+.opt.ok{background:var(--okbg);border-color:var(--ok)}
+.opt.bad{background:var(--badbg);border-color:var(--bad)}
+.q{font-size:20px;font-weight:650;margin:10px 0 14px;white-space:pre-line}
+input[type=text],textarea{width:100%;font:inherit;font-size:18px;padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+textarea{font-size:14px;min-height:140px;font-family:ui-monospace,Consolas,monospace}
+input:focus,textarea:focus{outline:none;border-color:var(--pri)}
+.fb{border-radius:12px;padding:12px;margin:12px 0}
+.fb.ok{background:var(--okbg);border:1px solid var(--ok)}.fb.bad{background:var(--badbg);border:1px solid var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;padding:8px;border:2px dashed var(--line);border-radius:12px;margin-bottom:10px}
+.chip{padding:8px 12px;border-radius:10px;background:var(--pri2);border:1px solid var(--pri);font-size:17px;font-weight:600}
+.flash{min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;cursor:pointer}
+.flash .w{font-size:34px;font-weight:800}
+.tag{font-size:12px;font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:.04em}
+.big-num{font-size:44px;font-weight:800;line-height:1}
+.back{background:none;border:0;color:var(--mut);padding:4px 0;margin-bottom:6px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+/* ====== Config ====== */
+const EXAM = new Date('2026-12-04T08:00:00');
+const GOAL = 20;
+const LS = 'ing_es4_trainer_v1';
+const TOPICS = {be:'Was / Were',reg:'Regulares (-ed)',irr:'Irregulares',neg:"Negativo (didn't)",q:'Preguntas (Did…?)',conn:'Conectores',time:'Tiempo y clima',read:'Lectura',dict:'Listening (dictado)'};
+const PLAN = [ // [desde, hasta, titulo, temas]
+  ['2026-11-13','2026-11-15','Was/were, conectores y tiempo',['be','conn','time']],
+  ['2026-11-16','2026-11-18','Verbos regulares (-ed)',['reg']],
+  ['2026-11-19','2026-11-22','Verbos irregulares',['irr']],
+  ['2026-11-23','2026-11-24',"Negativo con didn't",['neg']],
+  ['2026-11-25','2026-11-29','Preguntas con Did',['q']],
+  ['2026-11-30','2026-12-01','Mezcla de todo + simulacro',['be','reg','irr','neg','q','conn','time','read']],
+  ['2026-12-02','2026-12-03','Repaso de errores y listening',['dict','irr','q']],
+  ['2026-12-04','2026-12-04','Día de la prueba. ¡Tú puedes!',['be','irr','neg','q']]
+];
+
+/* ====== Utilidades ====== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nz = s => String(s).toLowerCase().replace(/[’‘`]/g,"'").replace(/[.?!,;:]/g,'').replace(/\s+/g,' ').trim();
+const shuffle = a => { a = [...a]; for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const hid = s => { let h=0; for (const c of s) h=(h*31+c.charCodeAt(0))|0; return (h>>>0).toString(36); };
+const dayKey = (d=new Date()) => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+function say(text, rate=.85){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='en-US'; u.rate=rate; speechSynthesis.speak(u);}catch(e){} }
+
+/* ====== Estado (localStorage) ====== */
+let state = {box:{},wrong:{},xp:0,streak:0,lastDay:'',today:{d:'',n:0},custom:[]};
+try { const r = localStorage.getItem(LS); if (r) state = Object.assign(state, JSON.parse(r)); } catch(e){}
+const save = () => { try{ localStorage.setItem(LS, JSON.stringify(state)); }catch(e){} };
+
+/* ====== Banco de preguntas ====== */
+const M = (topic,q,opts,ans,exp) => ({topic,type:'mcq',q,options:opts,answer:ans,explain:exp||''});
+const T = (topic,q,answers,exp) => ({topic,type:'type',q,answers,explain:exp||''});
+const O = (topic,sentence,exp) => ({topic,type:'order',answer:sentence,q:'Ordena las palabras para formar la oración:',explain:exp||''});
+const D = (sentence) => ({topic:'dict',type:'dict',answer:sentence,q:'Escucha y escribe exactamente lo que oyes:',explain:''});
+
+const HAND = [
+ // Was / Were
+ M('be','Yesterday I ___ at home.',['was','were','am'],0,'I / he / she / it → was'),
+ M('be','They ___ in Paris last week.',['was','were','are'],1,'we / you / they → were'),
+ M('be','She ___ very happy at the party.',['were','was','is'],1,'she → was'),
+ M('be','We ___ tired after the trip.',['was','were','are'],1,'we → were'),
+ M('be','The weather ___ cold yesterday.',['were','is','was'],2,'the weather = it → was'),
+ T('be',"It ___ sunny last Sunday. (negativo, forma corta)",["wasn't","was not"],"was + not = wasn't"),
+ T('be',"My friends ___ at school yesterday. (negativo, forma corta)",["weren't","were not"],"were + not = weren't"),
+ M('be','___ you at the gym last night?',['Was','Were','Did'],1,'Con be en pasado se invierte: Were you…?  (NO se usa did)'),
+ M('be','___ he your teacher in 2020?',['Were','Did','Was'],2,'he → Was he…?'),
+ M('be','Where ___ you last weekend?',['was','did','were'],2,'Wh- + were + you'),
+ M('be','Were you at home? — Yes, I ___.',['was','were','did'],0,'Respuesta corta: Yes, I was.'),
+ M('be',"Was there a bank near here? — No, there ___.",["weren't","wasn't","didn't"],1,'there was (singular) → wasn\'t'),
+ T('be','Were they late? — Yes, they ___.',['were'],'Yes, they were.'),
+ M('be','Why ___ she sad yesterday?',['were','did','was'],2,'she → was'),
+ O('be','Where were you last night?','Wh- + were + sujeto'),
+ O('be',"The movie wasn't very good.",'wasn\'t = was not'),
+ // Regulares
+ M('reg','Last night I ___ TV.',['watch','watched','watching'],1,'Pasado regular: verbo + -ed'),
+ M('reg','She ___ to the radio yesterday.',['listen','listens','listened'],2,'listen → listened'),
+ M('reg','We ___ football on Sunday.',['played','plays','play'],0,'play → played (no cambia la y después de vocal)'),
+ T('reg','Yesterday he ___ (cook) dinner for his family.',['cooked'],'cook → cooked'),
+ T('reg','They ___ (visit) their grandparents last month.',['visited'],'visit → visited'),
+ // Negativo
+ M('neg','I ___ go to school yesterday.',["didn't","don't","wasn't"],0,"didn't + verbo base"),
+ M('neg',"She didn't ___ breakfast this morning.",['have','had','has'],0,"Después de didn't, el verbo va en base: have"),
+ M('neg',"They didn't ___ the movie.",['watched','watch','watches'],1,"didn't + watch (NO watched)"),
+ T('neg','He ___ (not / go) to work on Monday.',["didn't go","did not go"],"didn't + go"),
+ T('neg','We ___ (not / see) Anna last week.',["didn't see","did not see"],"didn't + see"),
+ M('neg','Elige la oración correcta:',["She didn't went home.","She didn't go home.","She not went home."],1,"didn't + verbo base"),
+ M('neg','I ___ study last night, so the test was hard.',["didn't","wasn't","don't"],0,"didn't study"),
+ T('neg','I ___ (not / eat) lunch yesterday.',["didn't eat","did not eat"],"didn't + eat"),
+ M('neg','He ___ at home yesterday. (negativo)',["didn't be","wasn't","didn't was"],1,"Con be NO se usa didn't: was → wasn't"),
+ O('neg',"I didn't go out because it rained.",'because explica la razón'),
+ // Preguntas
+ M('q','___ you play tennis last Sunday?',['Did','Do','Were'],0,'Did + sujeto + verbo base'),
+ M('q','Did she ___ the homework?',['do','did','does'],0,'Después de Did, verbo en base: do'),
+ M('q','Where did they ___ last summer?',['go','went','going'],0,'Did + they + go'),
+ M('q','Did he call you? — No, he ___.',["didn't","wasn't","doesn't"],0,'Respuesta corta: No, he didn\'t.'),
+ M('q','Did you see Tom? — Yes, I ___.',['did','was','saw'],0,'Yes, I did.'),
+ T('q','What time did you ___ (get up) yesterday?',['get up'],'Did + sujeto + verbo base'),
+ O('q','Did you meet her at the party?','Did + sujeto + verbo base'),
+ O('q','What did you eat for lunch?','What + did + sujeto + verbo base'),
+ O('q','Where did he go last night?','Where + did + sujeto + verbo base'),
+ M('q','Elige la pregunta correcta:',['Did you went to the park?','Did you go to the park?','You did go to the park?'],1,'Did + you + go (base)'),
+ M('q','When ___ you arrive?',['did','were','was'],0,'Wh- + did + sujeto + verbo base'),
+ T('q',"Did they like the food? — No, they ___.",["didn't"],"Respuesta corta negativa: didn't"),
+ M('q','___ she at the party last night?',['Did','Was','Were'],1,'Con be: Was she…? (NO Did)'),
+ // Conectores
+ M('conn','I went to bed early ___ I was tired.',['because','but','and'],0,'because = porque (razón)'),
+ M('conn','The food was good, ___ it was expensive.',['because','and','but'],2,'but = pero (contraste)'),
+ M('conn','We visited a museum ___ had lunch.',['but','and','because'],1,'and = y (suma)'),
+ M('conn',"She didn't come ___ she was sick.",['because','but','and'],0,'because = razón'),
+ M('conn','I wanted to go out, ___ it rained.',['and','but','because'],1,'but = contraste'),
+ M('conn','He studied hard ___ passed the test.',['but','because','and'],2,'and = y'),
+ M('conn','I stayed home ___ the weather was bad.',['and','because','but'],1,'because = razón'),
+ M('conn','I liked the hotel, ___ it was far from the beach.',['but','because','and'],0,'but = contraste'),
+ T('conn','She was late ___ the bus broke down. (and / but / because)',['because'],'because = razón'),
+ // Tiempo y clima
+ M('time','I visited my grandma ___ week.',['last','ago','yesterday'],0,'last week / last night / last year'),
+ M('time','We went to Spain two years ___.',['last','ago','before'],1,'two years ago'),
+ M('time','She was born ___ 1999.',['on','at','in'],2,'in + año'),
+ M('time','I called him ___ night.',['yesterday','last','ago'],1,'last night'),
+ M('time','I saw her ___ morning.',['yesterday','last','ago'],0,'yesterday morning'),
+ M('time','It was ___ yesterday. I needed an umbrella.',['rainy','sunny','windy'],0,'rainy = lluvioso'),
+ M('time','It was very ___. I wore a hat for the sun.',['snowy','sunny','cloudy'],1,'sunny = soleado'),
+ T('time','"Ayer" en inglés:',['yesterday'],'yesterday'),
+ T('time','Hace tres días = three days ___',['ago'],'three days ago'),
+ M('time','My birthday was ___ March 3rd.',['in','on','at'],1,'on + fecha exacta'),
+ M('time','We traveled ___ July.',['on','in','at'],1,'in + mes'),
+ M('time','The party was ___ Saturday.',['in','at','on'],2,'on + día de la semana'),
+ // Lectura
+ M('read','Last weekend, Ana went to the beach with her friends. It was sunny, but the water was cold. They played volleyball and ate pizza. Ana didn\'t swim because she was tired.\n\nDid Ana swim?',['Yes, she did.',"No, she didn't.",'Yes, she was.'],1,"El texto dice: Ana didn't swim."),
+ M('read','Last weekend, Ana went to the beach with her friends. It was sunny, but the water was cold. They played volleyball and ate pizza. Ana didn\'t swim because she was tired.\n\nWhy didn\'t Ana swim?',['The water was warm.','She was tired.','It was rainy.'],1,'because she was tired'),
+ M('read','Tom woke up late yesterday. He didn\'t have breakfast and he ran to the bus stop. He was late for school, but his teacher wasn\'t angry.\n\nWhat did Tom do first?',['He ran to the bus stop.','He had breakfast.','He woke up late.'],2,'Secuencia: woke up → no breakfast → ran'),
+ M('read','Tom woke up late yesterday. He didn\'t have breakfast and he ran to the bus stop. He was late for school, but his teacher wasn\'t angry.\n\nWas the teacher angry?',["Yes, he was.","No, he wasn't.","No, he didn't."],1,"his teacher wasn't angry"),
+ // Dictado
+ ...["I was at home yesterday.","They weren't at school last week.","She went to the beach two days ago.","We didn't watch the movie.","Did you eat breakfast this morning?","He studied English last night.","It was cold, but we played outside.","I didn't go out because it rained.","Where did you meet your friends?","My parents traveled to Chile in 2019.","She called me and told me the news.","Were you at the party on Saturday?","I had pizza for dinner last night.","The weather was sunny yesterday.","We visited a museum and took many photos."].map(D)
+];
+
+const IRR = [['go','went','ir'],['have','had','tener'],['see','saw','ver'],['meet','met','conocer / encontrarse'],['come','came','venir'],['do','did','hacer'],['eat','ate','comer'],['buy','bought','comprar'],['get','got','conseguir / obtener'],['make','made','hacer / fabricar'],['take','took','tomar / llevar'],['write','wrote','escribir'],['say','said','decir'],['give','gave','dar'],['read','read','leer (se pronuncia "red")'],['sleep','slept','dormir'],['drink','drank','beber'],['drive','drove','manejar'],['swim','swam','nadar'],['run','ran','correr'],['sit','sat','sentarse'],['speak','spoke','hablar'],['tell','told','contar / decir'],['think','thought','pensar'],['know','knew','saber / conocer'],['leave','left','salir / dejar'],['find','found','encontrar'],['lose','lost','perder'],['wear','wore','usar (ropa)'],['sing','sang','cantar'],['fly','flew','volar'],['begin','began','empezar'],['bring','brought','traer'],['build','built','construir'],['feel','felt','sentir'],['forget','forgot','olvidar'],['pay','paid','pagar'],['put','put','poner'],['sell','sold','vender'],['send','sent','enviar'],['stand','stood','estar de pie'],['win','won','ganar'],['wake','woke','despertar'],['spend','spent','gastar / pasar tiempo'],['cut','cut','cortar'],['hear','heard','oír'],['keep','kept','guardar / mantener'],['ride','rode','montar'],['draw','drew','dibujar']];
+const REG = [['play','played'],['live','lived'],['study','studied'],['stop','stopped'],['carry','carried'],['plan','planned'],['watch','watched'],['dance','danced'],['cry','cried'],['visit','visited'],['listen','listened'],['start','started'],['clean','cleaned'],['enjoy','enjoyed'],['try','tried'],['drop','dropped'],['wait','waited'],['call','called'],['help','helped'],['need','needed'],['love','loved'],['open','opened'],['work','worked'],['cook','cooked'],['move','moved'],['use','used'],['arrive','arrived'],['walk','walked'],['ask','asked'],['want','wanted'],['decide','decided'],['stay','stayed']];
+
+function buildBank(){
+  const out = [];
+  HAND.forEach(q => out.push(q));
+  IRR.forEach(([b,p,es]) => out.push({topic:'irr',type:'type',q:`Pasado de «${b}» (${es})`,answers:[p],explain:`${b} → ${p}`,card:{b,p,es}}));
+  REG.forEach(([b,p]) => out.push({topic:'reg',type:'type',q:`Pasado de «${b}»`,answers:[p],explain:`${b} → ${p}`}));
+  (state.custom||[]).forEach(q => out.push(q));
+  out.forEach(q => { q.id = hid(q.topic+'|'+q.type+'|'+q.q+'|'+(q.answer||'')+'|'+((q.answers||[]).join('/'))); });
+  return out;
+}
+let BANK = buildBank();
+
+/* ====== Selección con repetición espaciada ====== */
+const weight = q => { const b = state.box[q.id]; return b===undefined ? 5 : [8,4,2,1,.4][b]; };
+function pick(pool,n){
+  const p=[...pool], out=[];
+  while(out.length<n && p.length){
+    const tot=p.reduce((a,q)=>a+weight(q),0); let r=Math.random()*tot, k=0;
+    for(;k<p.length;k++){ r-=weight(p[k]); if(r<=0) break; }
+    out.push(p.splice(Math.min(k,p.length-1),1)[0]);
+  }
+  return out;
+}
+const mastered = q => (state.box[q.id]||0) >= 3;
+
+/* ====== Racha / XP ====== */
+function touchDay(){
+  const t = dayKey();
+  if (state.today.d !== t) state.today = {d:t,n:0};
+  if (state.lastDay !== t){
+    const y = dayKey(new Date(Date.now()-864e5));
+    state.streak = state.lastDay === y ? state.streak+1 : 1;
+    state.lastDay = t;
+  }
+}
+function record(q, ok){
+  touchDay();
+  state.today.n++;
+  if (ok){ state.box[q.id] = Math.min(4,(state.box[q.id]||0)+1); state.xp += 10; delete state.wrong[q.id]; }
+  else { state.box[q.id] = 0; state.wrong[q.id] = (state.wrong[q.id]||0)+1; state.xp += 2; }
+  save();
+}
+
+/* ====== Revisión de respuesta ====== */
+function correctText(q){
+  if (q.type==='mcq') return q.options[q.answer];
+  if (q.type==='type') return q.answers[0];
+  return q.answer;
+}
+function isRight(q, user){
+  if (q.type==='mcq') return user === q.answer;
+  if (q.type==='type') return q.answers.some(a => nz(a) === nz(user));
+  return nz(q.answer) === nz(user);
+}
+
+/* ====== Pantallas ====== */
+const app = $('#app');
+let S = null, timer = null;
+
+function header(){
+  const days = Math.max(0, Math.ceil((EXAM - new Date())/864e5));
+  const lvl = Math.floor(state.xp/200)+1;
+  return `<div class="top"><h1>🇬🇧 ES4 Trainer</h1><div class="pills"><span class="pill">📅 ${days} días</span><span class="pill">🔥 ${state.streak}</span><span class="pill">⭐ Nv ${lvl} · ${state.xp} XP</span></div></div>`;
+}
+
+function todayPlan(){
+  const t = dayKey();
+  return PLAN.find(p => t >= p[0] && t <= p[1]) || PLAN[PLAN.length-1];
+}
+
+function home(){
+  clearInterval(timer); S = null; BANK = buildBank();
+  const t = dayKey(); const n = state.today.d===t ? state.today.n : 0;
+  const plan = todayPlan();
+  const wrongN = BANK.filter(q => state.wrong[q.id]).length;
+  const totM = BANK.filter(mastered).length;
+  const pct = Math.round(100*totM/BANK.length);
+  const rows = Object.keys(TOPICS).map(k => {
+    const qs = BANK.filter(q=>q.topic===k); const m = qs.filter(mastered).length;
+    return `<div class="row"><div style="flex:1"><b>${TOPICS[k]}</b> <span class="mut">${m}/${qs.length}</span><div class="bar"><i style="width:${qs.length?100*m/qs.length:0}%"></i></div></div><button class="sm" data-act="topic" data-k="${k}">Practicar</button></div>`;
+  }).join('');
+  app.innerHTML = header() + `
+  <div class="card"><div class="tag">Hoy toca</div><h2>${esc(plan[2])}</h2>
+    <div class="mut">Meta del día: ${Math.min(n,GOAL)}/${GOAL} preguntas</div><div class="bar" style="margin:6px 0 12px"><i style="width:${Math.min(100,100*n/GOAL)}%"></i></div>
+    <button class="pri big" data-act="plan">▶ Empezar sesión de hoy (10 preguntas)</button></div>
+  <div class="grid">
+    <button class="big" data-act="smart">🧠 Sesión inteligente</button>
+    <button class="big" data-act="exam">📝 Simulacro (30)</button>
+    <button class="big" data-act="cards">🃏 Fichas de irregulares</button>
+    <button class="big" data-act="errors" ${wrongN?'':'disabled'}>❌ Mis errores (${wrongN})</button>
+  </div>
+  <div class="card" style="margin-top:12px"><h2>Dominio por tema <span class="mut">· total ${pct}%</span></h2>${rows}</div>
+  <div class="card"><button class="big" data-act="import">➕ Agregar preguntas de ChatGPT (${(state.custom||[]).length} propias)</button></div>
+  <p class="mut">Una pregunta se considera "dominada" cuando la aciertas varias veces seguidas. Meta: llegar a 90% antes del 4 de dic.</p>`;
+}
+
+function startSession(qs, opts={}){
+  if (!qs.length){ alert('No hay preguntas para esta sesión.'); return; }
+  S = {qs, i:0, ok:0, res:[], exam:!!opts.exam, title:opts.title||'Sesión', end: opts.exam ? Date.now()+30*60000 : 0};
+  clearInterval(timer);
+  if (S.exam){ timer = setInterval(tick,1000); }
+  renderQ();
+}
+function tick(){
+  const left = Math.max(0, S.end - Date.now());
+  const el = $('#timer'); if (el) el.textContent = Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0');
+  if (left<=0) finish();
+}
+
+function renderQ(){
+  const q = S.qs[S.i]; const prog = 100*S.i/S.qs.length;
+  let body = '';
+  if (q.type==='mcq'){
+    S.opts = shuffle(q.options.map((t,i)=>({t,i})));
+    body = `<div class="q">${esc(q.q)}</div>` + S.opts.map((o,k)=>`<button class="opt" data-act="mcq" data-k="${k}">${esc(o.t)}</button>`).join('');
+  } else if (q.type==='type'){
+    body = `<div class="q">${esc(q.q)}</div><input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Escribe tu respuesta"><div style="margin-top:10px"><button class="pri big" data-act="check">Comprobar</button></div>`;
+  } else if (q.type==='order'){
+    S.pool = shuffle(q.answer.split(' ').map((w,i)=>({w,i}))); S.chosen = [];
+    if (S.pool.length>1 && S.pool.every((x,k)=>x.i===k)) S.pool.reverse();
+    body = `<div class="q">${esc(q.q)}</div><div class="chips" id="chosen"></div><div class="chips" id="pool" style="border-style:solid"></div><button class="pri big" data-act="checkorder">Comprobar</button>`;
+  } else if (q.type==='dict'){
+    body = `<div class="q">${esc(q.q)}</div><div class="grid" style="margin-bottom:10px"><button class="big" data-act="play">🔊 Escuchar</button><button class="big" data-act="slow">🐢 Más lento</button></div><input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Escribe la oración"><div style="margin-top:10px"><button class="pri big" data-act="check">Comprobar</button></div>`;
+  }
+  app.innerHTML = header() + `<button class="back" data-act="home">← Salir</button>
+  <div class="card"><div style="display:flex;justify-content:space-between"><span class="tag">${esc(S.title)} · ${TOPICS[q.topic]||'Mi tema'}</span>${S.exam?'<b id="timer">30:00</b>':`<span class="mut">${S.i+1}/${S.qs.length}</span>`}</div>
+  <div class="bar" style="margin:8px 0"><i style="width:${prog}%"></i></div>${body}<div id="fb"></div></div>`;
+  if (q.type==='order') drawOrder();
+  if (q.type==='dict') setTimeout(()=>say(q.answer),200);
+  const inp = $('#ans'); if (inp){ inp.focus(); inp.addEventListener('keydown',e=>{ if(e.key==='Enter') answer(inp.value); }); }
+  if (S.exam) tick();
+}
+function drawOrder(){
+  $('#chosen').innerHTML = S.chosen.map(x=>`<button class="chip" data-act="unpick" data-i="${x.i}">${esc(x.w)}</button>`).join('');
+  $('#pool').innerHTML = S.pool.filter(x=>!S.chosen.includes(x)).map(x=>`<button class="chip" data-act="pick" data-i="${x.i}">${esc(x.w)}</button>`).join('');
+}
+
+let locked = false;
+function answer(user){
+  if (locked && !S.exam) return;
+  const q = S.qs[S.i]; const ok = isRight(q, user);
+  record(q, ok); if (ok) S.ok++;
+  S.res.push({q, ok, user});
+  if (S.exam){ next(); return; }
+  locked = true;
+  if (q.type==='mcq'){
+    document.querySelectorAll('.opt').forEach((b,k)=>{ const o=S.opts[k]; if(o.i===q.answer) b.classList.add('ok'); else if(k===user_k(user)) b.classList.add('bad'); });
+  }
+  const praise = ['¡Bien!','¡Exacto!','¡Muy bien!','¡Eso es!'][Math.floor(Math.random()*4)];
+  $('#fb').innerHTML = `<div class="fb ${ok?'ok':'bad'}"><b>${ok?'✅ '+praise+' +10 XP':'❌ Respuesta correcta: '+esc(correctText(q))}</b>${q.explain?`<div class="mut" style="margin-top:4px">💡 ${esc(q.explain)}</div>`:''}${q.type==='dict'?`<div style="margin-top:4px">${esc(q.answer)}</div>`:''}</div><button class="pri big" data-act="next" id="nextbtn">Siguiente →</button>`;
+  const nb=$('#nextbtn'); if(nb) nb.focus();
+  const hdr = document.querySelector('.pills'); if (hdr) hdr.innerHTML = header().match(/<div class="pills">([\s\S]*?)<\/div><\/div>$/)[1];
+}
+function user_k(u){ return S.lastK; }
+function next(){ locked=false; S.i++; if (S.i>=S.qs.length) finish(); else renderQ(); }
+
+function gradeOf(p){ return p>=.6 ? 4+3*(p-.6)/.4 : 1+3*p/.6; }
+function finish(){
+  clearInterval(timer);
+  // en simulacro, lo no respondido cuenta como incorrecto
+  const total = S.qs.length; const p = S.ok/total; const g = gradeOf(p).toFixed(1);
+  const wrong = S.res.filter(r=>!r.ok);
+  const left = S.qs.slice(S.res.length);
+  app.innerHTML = header() + `<div class="card" style="text-align:center"><div class="tag">${esc(S.title)} terminado</div><div class="big-num">${S.ok}/${total}</div><div class="mut">${Math.round(p*100)}% correcto</div>${S.exam?`<h2 style="margin-top:10px">Nota estimada: ${g}</h2><div class="mut">(escala chilena, 60% = 4.0)</div>`:''}<div style="margin-top:8px">${p>=.9?'🏆 Nivel 7. Sigue así.':p>=.7?'💪 Vas bien, repasa los errores.':'📚 Repite los errores y vuelve a intentar.'}</div></div>
+  ${wrong.length?`<div class="card"><h2>Para repasar</h2>${wrong.map(r=>`<div class="row"><div><div>${esc(r.q.q.split('\n').pop())}</div><div class="mut">✔ ${esc(correctText(r.q))}${r.q.explain?' — '+esc(r.q.explain):''}</div></div></div>`).join('')}</div>`:''}
+  <div class="grid"><button class="big" data-act="home">Inicio</button>${wrong.length?`<button class="pri big" data-act="retry">Repetir errores</button>`:''}</div>`;
+  S.retry = wrong.map(r=>r.q).concat(left);
+}
+
+function cards(){
+  const irr = BANK.filter(q=>q.card);
+  const deck = pick(irr, Math.min(12, irr.length));
+  S = {deck, i:0, show:false}; clearInterval(timer);
+  renderCard();
+}
+function renderCard(){
+  if (S.i >= S.deck.length){ home(); return; }
+  const q = S.deck[S.i], c = q.card;
+  app.innerHTML = header() + `<button class="back" data-act="home">← Salir</button>
+  <div class="card"><div class="tag">Ficha ${S.i+1}/${S.deck.length}</div>
+  <div class="flash" data-act="flip"><div class="w">${esc(c.b)}</div><div class="mut">${esc(c.es)}</div>${S.show?`<div class="w" style="color:var(--pri)">${esc(c.p)}</div>`:'<div class="mut">Toca para ver el pasado</div>'}</div></div>
+  ${S.show?`<div class="grid"><button class="big" data-act="cardno">😅 No la sabía</button><button class="pri big" data-act="cardyes">😎 La sabía</button></div>`:''}`;
+}
+
+function importScreen(){
+  const prompt = `Eres profesor de inglés nivel A1 (CEFR) para un estudiante chileno. Genera 30 preguntas para practicar "Simple past (was/were, verbos regulares e irregulares, afirmativo, negativo y preguntas con did), conectores and/but/because y expresiones de tiempo (yesterday, last week, ago)". Usa el libro Wide Angle Level 1B, unidades 7 y 8, como nivel de dificultad. Devuelve SOLO un arreglo JSON válido, sin texto extra ni bloques de código, con objetos de estos 4 formatos:
+{"topic":"neg","type":"mcq","q":"I ___ go to school yesterday.","options":["didn't","don't","wasn't"],"answer":0,"explain":"didn't + verbo base"}
+{"topic":"q","type":"type","q":"Did they like the food? — No, they ___.","answers":["didn't"],"explain":"respuesta corta"}
+{"topic":"q","type":"order","answer":"Where did he go last night?","explain":"Wh- + did + sujeto + verbo base"}
+{"topic":"dict","type":"dict","answer":"We didn't watch the movie."}
+Valores permitidos de "topic": be, reg, irr, neg, q, conn, time, read, dict. En "mcq", "answer" es el número (empezando en 0) de la opción correcta, y pon tres opciones. Mezcla los 4 formatos. Las explicaciones ("explain") van en español, cortas.`;
+  app.innerHTML = header() + `<button class="back" data-act="home">← Volver</button>
+  <div class="card"><h2>Agregar preguntas de ChatGPT</h2>
+  <ol><li>Copia este mensaje y pégalo en ChatGPT.</li><li>Copia la respuesta completa (el JSON) y pégala aquí abajo.</li><li>Toca Importar. Las preguntas quedan en tu app.</li></ol>
+  <button class="big" data-act="copyprompt">📋 Copiar mensaje para ChatGPT</button>
+  <textarea id="imp" placeholder='Pega aquí el JSON de ChatGPT: [ {...}, {...} ]' style="margin-top:12px"></textarea>
+  <div id="impmsg" class="mut" style="margin:8px 0"></div>
+  <button class="pri big" data-act="doimport">Importar</button>
+  ${(state.custom||[]).length?`<button class="big" style="margin-top:8px" data-act="clearcustom">Borrar mis ${(state.custom||[]).length} preguntas importadas</button>`:''}</div>`;
+  S = {prompt};
+}
+function doImport(){
+  const msg = $('#impmsg'); let data;
+  try{
+    let raw = $('#imp').value.trim().replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+    data = JSON.parse(raw); if (!Array.isArray(data)) data = data.questions;
+    if (!Array.isArray(data)) throw new Error('no es un arreglo');
+  }catch(e){ msg.textContent='❌ No pude leer el JSON: '+e.message; return; }
+  let ok=0, bad=0;
+  data.forEach(q=>{
+    try{
+      if (!q || typeof q.type!=='string') throw 0;
+      const topic = TOPICS[q.topic] ? q.topic : 'q';
+      let n;
+      if (q.type==='mcq'){ if(!q.q||!Array.isArray(q.options)||q.options.length<2||!Number.isInteger(q.answer)||q.answer<0||q.answer>=q.options.length) throw 0; n = M(topic,String(q.q),q.options.map(String),q.answer,String(q.explain||'')); }
+      else if (q.type==='type'){ if(!q.q||!Array.isArray(q.answers)||!q.answers.length) throw 0; n = T(topic,String(q.q),q.answers.map(String),String(q.explain||'')); }
+      else if (q.type==='order'){ if(!q.answer||String(q.answer).split(' ').length<3) throw 0; n = O(topic,String(q.answer),String(q.explain||'')); }
+      else if (q.type==='dict'){ if(!q.answer) throw 0; n = D(String(q.answer)); }
+      else throw 0;
+      state.custom.push(n); ok++;
+    }catch(e){ bad++; }
+  });
+  save(); BANK = buildBank();
+  msg.textContent = `✅ Importadas: ${ok}. ${bad?'Con error (ignoradas): '+bad+'.':''}`;
+}
+
+/* ====== Eventos ====== */
+app.addEventListener('click', e=>{
+  const b = e.target.closest('[data-act]'); if(!b) return;
+  const a = b.dataset.act;
+  if (a==='home') return home();
+  if (a==='plan'){ const topics = todayPlan()[3]; return startSession(pick(BANK.filter(q=>topics.includes(q.topic)),10),{title:'Hoy'}); }
+  if (a==='smart') return startSession(pick(BANK.filter(q=>q.topic!=='dict'||Math.random()<.3),10),{title:'Inteligente'});
+  if (a==='topic') return startSession(pick(BANK.filter(q=>q.topic===b.dataset.k),10),{title:TOPICS[b.dataset.k]});
+  if (a==='errors') return startSession(shuffle(BANK.filter(q=>state.wrong[q.id])).slice(0,15),{title:'Mis errores'});
+  if (a==='exam'){
+    const mix = {be:3,reg:3,irr:6,neg:4,q:5,conn:3,time:2,read:2,dict:2}; let qs=[];
+    for (const k in mix) qs = qs.concat(pick(BANK.filter(q=>q.topic===k),mix[k]));
+    if (qs.length<30) qs = qs.concat(pick(BANK.filter(q=>!qs.includes(q)),30-qs.length));
+    return startSession(shuffle(qs),{title:'Simulacro',exam:true});
+  }
+  if (a==='cards') return cards();
+  if (a==='import') return importScreen();
+  if (a==='copyprompt'){ navigator.clipboard.writeText(S.prompt).then(()=>{b.textContent='✅ Copiado';}).catch(()=>{ $('#imp').value=S.prompt; b.textContent='Copia el texto del cuadro'; }); return; }
+  if (a==='doimport') return doImport();
+  if (a==='clearcustom'){ if(confirm('¿Borrar las preguntas importadas?')){ state.custom=[]; save(); BANK=buildBank(); importScreen(); } return; }
+  if (a==='flip'){ S.show=!S.show; return renderCard(); }
+  if (a==='cardyes'||a==='cardno'){ const q=S.deck[S.i]; record(q,a==='cardyes'); S.i++; S.show=false; return renderCard(); }
+  if (a==='retry'){ const r=S.retry; return startSession(r,{title:'Repaso'}); }
+  if (!S || !S.qs) return;
+  if (a==='mcq'){ if(locked) return; const k=+b.dataset.k; S.lastK=k; return answer(S.opts[k].i); }
+  if (a==='check'){ const v=$('#ans').value; if(!v.trim()) return; return answer(v); }
+  if (a==='play') return say(S.qs[S.i].answer,.85);
+  if (a==='slow') return say(S.qs[S.i].answer,.55);
+  if (a==='next') return next();
+  if (a==='pick'){ const x=S.pool.find(x=>x.i===+b.dataset.i && !S.chosen.includes(x)); if(x){S.chosen.push(x); drawOrder();} return; }
+  if (a==='unpick'){ S.chosen=S.chosen.filter(x=>x.i!==+b.dataset.i); return drawOrder(); }
+  if (a==='checkorder'){ if(locked) return; return answer(S.chosen.map(x=>x.w).join(' ')); }
+});
+
+home();
+</script>
+</body>
+</html>
