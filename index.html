@@ -75,8 +75,29 @@ function say(text, rate=.85){ try{ speechSynthesis.cancel(); const u=new SpeechS
 
 /* ====== Estado (localStorage) ====== */
 let state = {box:{},wrong:{},xp:0,streak:0,lastDay:'',today:{d:'',n:0},custom:[]};
-try { const r = localStorage.getItem(LS); if (r) state = Object.assign(state, JSON.parse(r)); } catch(e){}
-const save = () => { try{ localStorage.setItem(LS, JSON.stringify(state)); }catch(e){} };
+let storageFailed = false;
+try {
+  const raw = localStorage.getItem(LS);
+  if (raw) {
+    const loaded = JSON.parse(raw);
+    if (!loaded || typeof loaded !== 'object' || Array.isArray(loaded)) throw new Error('Estado inválido');
+    Object.assign(state, loaded);
+    if (!state.box || typeof state.box !== 'object' || Array.isArray(state.box)) state.box = {};
+    if (!state.wrong || typeof state.wrong !== 'object' || Array.isArray(state.wrong)) state.wrong = {};
+    if (!state.today || typeof state.today !== 'object') state.today = {d:'',n:0};
+    if (!Array.isArray(state.custom)) state.custom = [];
+    state.custom = state.custom.filter(q => q && typeof q === 'object' && typeof q.topic === 'string' && typeof q.type === 'string');
+  }
+} catch(e) { storageFailed = true; }
+const save = () => {
+  try { localStorage.setItem(LS, JSON.stringify(state)); storageFailed = false; return true; }
+  catch(e) {
+    storageFailed = true;
+    const warning = $('#save-warning');
+    if (warning) warning.style.display = 'block';
+    return false;
+  }
+};
 
 /* ====== Banco de preguntas ====== */
 const M = (topic,q,opts,ans,exp) => ({topic,type:'mcq',q,options:opts,answer:ans,explain:exp||''});
@@ -229,16 +250,19 @@ let S = null, timer = null;
 function header(){
   const days = Math.max(0, Math.ceil((EXAM - new Date())/864e5));
   const lvl = Math.floor(state.xp/200)+1;
-  return `<div class="top"><h1>🇬🇧 ES4 Trainer</h1><div class="pills"><span class="pill">📅 ${days} días</span><span class="pill">🔥 ${state.streak}</span><span class="pill">⭐ Nv ${lvl} · ${state.xp} XP</span></div></div>`;
+  return `<div class="top"><h1>🇬🇧 ES4 Trainer</h1><div class="pills"><span class="pill">📅 ${days} días</span><span class="pill">🔥 ${state.streak}</span><span class="pill">⭐ Nv ${lvl} · ${state.xp} XP</span></div></div><div id="save-warning" class="fb bad" role="alert" style="display:${storageFailed?'block':'none'}">⚠️ No se pudo guardar el progreso en este navegador. Revisa el almacenamiento antes de cerrar la aplicación.</div>`;
 }
 
 function todayPlan(){
   const t = dayKey();
-  return PLAN.find(p => t >= p[0] && t <= p[1]) || PLAN[PLAN.length-1];
+  const active = PLAN.find(p => t >= p[0] && t <= p[1]);
+  if (active) return active;
+  if (t < PLAN[0][0]) return PLAN[0];
+  return ['', '', 'Repaso general después de la ES4', Object.keys(TOPICS)];
 }
 
 function home(){
-  clearInterval(timer); S = null; BANK = buildBank();
+  clearInterval(timer); S = null; locked = false; BANK = buildBank();
   const t = dayKey(); const n = state.today.d===t ? state.today.n : 0;
   const plan = todayPlan();
   const wrongN = BANK.filter(q => state.wrong[q.id]).length;
@@ -265,18 +289,21 @@ function home(){
 
 function startSession(qs, opts={}){
   if (!qs.length){ alert('No hay preguntas para esta sesión.'); return; }
-  S = {qs, i:0, ok:0, res:[], exam:!!opts.exam, title:opts.title||'Sesión', end: opts.exam ? Date.now()+30*60000 : 0};
+  locked = false;
+  S = {qs, i:0, ok:0, res:[], exam:!!opts.exam, title:opts.title||'Sesión', end: opts.exam ? Date.now()+30*60000 : 0, finished:false};
   clearInterval(timer);
   if (S.exam){ timer = setInterval(tick,1000); }
   renderQ();
 }
 function tick(){
+  if (!S || !S.exam || S.finished) return;
   const left = Math.max(0, S.end - Date.now());
   const el = $('#timer'); if (el) el.textContent = Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0');
   if (left<=0) finish();
 }
 
 function renderQ(){
+  if (!S || !S.qs || S.finished || !S.qs[S.i]) return;
   const q = S.qs[S.i]; const prog = 100*S.i/S.qs.length;
   let body = '';
   if (q.type==='mcq'){
@@ -285,7 +312,7 @@ function renderQ(){
   } else if (q.type==='type'){
     body = `<div class="q">${esc(q.q)}</div><input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Escribe tu respuesta"><div style="margin-top:10px"><button class="pri big" data-act="check">Comprobar</button></div>`;
   } else if (q.type==='order'){
-    S.pool = shuffle(q.answer.split(' ').map((w,i)=>({w,i}))); S.chosen = [];
+    S.pool = shuffle(q.answer.trim().split(/\s+/).map((w,i)=>({w,i}))); S.chosen = [];
     if (S.pool.length>1 && S.pool.every((x,k)=>x.i===k)) S.pool.reverse();
     body = `<div class="q">${esc(q.q)}</div><div class="chips" id="chosen"></div><div class="chips" id="pool" style="border-style:solid"></div><button class="pri big" data-act="checkorder">Comprobar</button>`;
   } else if (q.type==='dict'){
@@ -296,7 +323,7 @@ function renderQ(){
   <div class="bar" style="margin:8px 0"><i style="width:${prog}%"></i></div>${body}<div id="fb"></div></div>`;
   if (q.type==='order') drawOrder();
   if (q.type==='dict') setTimeout(()=>say(q.answer),200);
-  const inp = $('#ans'); if (inp){ inp.focus(); inp.addEventListener('keydown',e=>{ if(e.key==='Enter') answer(inp.value); }); }
+  const inp = $('#ans'); if (inp){ inp.focus(); inp.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.isComposing){ e.preventDefault(); answer(inp.value); } }); }
   if (S.exam) tick();
 }
 function drawOrder(){
@@ -306,31 +333,38 @@ function drawOrder(){
 
 let locked = false;
 function answer(user){
-  if (locked && !S.exam) return;
-  const q = S.qs[S.i]; const ok = isRight(q, user);
+  if (!S || !S.qs || S.finished || locked) return;
+  const q = S.qs[S.i];
+  if (!q) return;
+  if (q.type !== 'mcq' && !String(user ?? '').trim()) return;
+  if (q.type === 'order' && (!S.chosen || !S.pool || S.chosen.length !== S.pool.length)) return;
+  locked = true;
+  const ok = isRight(q, user);
   record(q, ok); if (ok) S.ok++;
   S.res.push({q, ok, user});
   if (S.exam){ next(); return; }
-  locked = true;
   if (q.type==='mcq'){
     document.querySelectorAll('.opt').forEach((b,k)=>{ const o=S.opts[k]; if(o.i===q.answer) b.classList.add('ok'); else if(k===user_k(user)) b.classList.add('bad'); });
   }
   const praise = ['¡Bien!','¡Exacto!','¡Muy bien!','¡Eso es!'][Math.floor(Math.random()*4)];
   $('#fb').innerHTML = `<div class="fb ${ok?'ok':'bad'}"><b>${ok?'✅ '+praise+' +10 XP':'❌ Respuesta correcta: '+esc(correctText(q))}</b>${q.explain?`<div class="mut" style="margin-top:4px">💡 ${esc(q.explain)}</div>`:''}${q.type==='dict'?`<div style="margin-top:4px">${esc(q.answer)}</div>`:''}</div><button class="pri big" data-act="next" id="nextbtn">Siguiente →</button>`;
   const nb=$('#nextbtn'); if(nb) nb.focus();
-  const hdr = document.querySelector('.pills'); if (hdr) hdr.innerHTML = header().match(/<div class="pills">([\s\S]*?)<\/div><\/div>$/)[1];
+  const hdr = document.querySelector('.pills'); if (hdr) { const match = header().match(/<div class="pills">([\s\S]*?)<\/div><\/div>/); if (match) hdr.innerHTML = match[1]; }
 }
 function user_k(u){ return S.lastK; }
-function next(){ locked=false; S.i++; if (S.i>=S.qs.length) finish(); else renderQ(); }
+function next(){ if (!S || !S.qs || S.finished) return; locked=false; S.i++; if (S.i>=S.qs.length) finish(); else renderQ(); }
 
 function gradeOf(p){ return p>=.6 ? 4+3*(p-.6)/.4 : 1+3*p/.6; }
 function finish(){
+  if (!S || !S.qs || S.finished) return;
+  S.finished = true;
+  locked = true;
   clearInterval(timer);
   // en simulacro, lo no respondido cuenta como incorrecto
   const total = S.qs.length; const p = S.ok/total; const g = gradeOf(p).toFixed(1);
   const wrong = S.res.filter(r=>!r.ok);
   const left = S.qs.slice(S.res.length);
-  app.innerHTML = header() + `<div class="card" style="text-align:center"><div class="tag">${esc(S.title)} terminado</div><div class="big-num">${S.ok}/${total}</div><div class="mut">${Math.round(p*100)}% correcto</div>${S.exam?`<h2 style="margin-top:10px">Nota estimada: ${g}</h2><div class="mut">(escala chilena, 60% = 4.0)</div>`:''}<div style="margin-top:8px">${p>=.9?'🏆 Nivel 7. Sigue así.':p>=.7?'💪 Vas bien, repasa los errores.':'📚 Repite los errores y vuelve a intentar.'}</div></div>
+  app.innerHTML = header() + `<div class="card" style="text-align:center"><div class="tag">${esc(S.title)} terminado</div><div class="big-num">${S.ok}/${total}</div><div class="mut">${Math.round(p*100)}% correcto</div>${S.exam && left.length ? `<div class="mut">⏳ ${left.length} pregunta(s) sin responder (cuentan como incorrectas).</div>` : ''}${S.exam?`<h2 style="margin-top:10px">Nota estimada: ${g}</h2><div class="mut">(escala chilena, 60% = 4.0)</div>`:''}<div style="margin-top:8px">${p>=.9?'🏆 Nivel 7. Sigue así.':p>=.7?'💪 Vas bien, repasa los errores.':'📚 Repite los errores y vuelve a intentar.'}</div></div>
   ${wrong.length?`<div class="card"><h2>Para repasar</h2>${wrong.map(r=>`<div class="row"><div><div>${esc(r.q.q.split('\n').pop())}</div><div class="mut">✔ ${esc(correctText(r.q))}${r.q.explain?' — '+esc(r.q.explain):''}</div></div></div>`).join('')}</div>`:''}
   <div class="grid"><button class="big" data-act="home">Inicio</button>${wrong.length?`<button class="pri big" data-act="retry">Repetir errores</button>`:''}</div>`;
   S.retry = wrong.map(r=>r.q).concat(left);
@@ -424,7 +458,14 @@ app.addEventListener('click', e=>{
   if (a==='next') return next();
   if (a==='pick'){ const x=S.pool.find(x=>x.i===+b.dataset.i && !S.chosen.includes(x)); if(x){S.chosen.push(x); drawOrder();} return; }
   if (a==='unpick'){ S.chosen=S.chosen.filter(x=>x.i!==+b.dataset.i); return drawOrder(); }
-  if (a==='checkorder'){ if(locked) return; return answer(S.chosen.map(x=>x.w).join(' ')); }
+  if (a==='checkorder'){
+     if (locked) return;
+     if (!S.chosen || !S.pool || S.chosen.length !== S.pool.length) {
+       const fb = $('#fb'); if (fb) fb.textContent = 'Selecciona todas las palabras antes de comprobar.';
+       return;
+     }
+     return answer(S.chosen.map(x=>x.w).join(' '));
+   }
 });
 
 home();
