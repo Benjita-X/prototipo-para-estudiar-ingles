@@ -888,6 +888,83 @@ function openLesson(i){
   try { window.scrollTo(0,0); } catch(e){}
 }
 
+/* ====== Listening y speaking sin cuentas ni servicios propios ====== */
+function listeningHome(){
+  clearInterval(timer);S=null;locked=false;clearSession();
+  const n=BANK.filter(q=>q.audio && q.topic==='dict').length;
+  const d=BANK.filter(q=>q.type==='dict').length;
+  app.innerHTML=header()+'<button class="back" data-act="home">← Inicio</button>'+
+    '<div class="card"><h2>🎧 Listening</h2><p class="mut">Escucha el mensaje sin ver la transcripción. La voz depende del navegador: algunas voces necesitan conexión a internet.</p>'+
+    '<div class="grid"><button class="pri big" data-act="listenquiz">🔊 Comprensión ('+n+')</button>'+
+    '<button class="big" data-act="dictquiz">✍️ Dictado ('+d+')</button></div></div>';
+}
+const SPEAKING=[
+ ['I was at home yesterday.','Estuve en casa ayer.'],
+ ["She didn't go to school.",'Ella no fue al colegio.'],
+ ['Did you visit your grandparents?','¿Visitaste a tus abuelos?'],
+ ['They were tired after the trip.','Estaban cansados después del viaje.'],
+ ['We played football last Saturday.','Jugamos fútbol el sábado pasado.'],
+ ['He bought a new book.','Él compró un libro nuevo.'],
+ ['Where did you go last weekend?','¿Dónde fuiste el fin de semana pasado?'],
+ ['It was rainy and cold yesterday.','Ayer estuvo lluvioso y frío.'],
+ ["I didn't watch television last night.",'No vi televisión anoche.'],
+ ['First I studied. Then I went to bed.','Primero estudié. Después me acosté.'],
+ ['The food was good, but it was expensive.','La comida estaba rica, pero era cara.'],
+ ['My friends arrived at eight o’clock.','Mis amigos llegaron a las ocho.']
+];
+let speechRecognizer=null;
+function speakingHome(){
+  clearInterval(timer);S=null;locked=false;clearSession();
+  S={speech:true,index:0};renderSpeaking();
+}
+function renderSpeaking(){
+  if(!S || !S.speech)return;
+  const entry=SPEAKING[S.index];
+  const supported=typeof window!=='undefined' && !!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  app.innerHTML=header()+'<button class="back" data-act="home">← Inicio</button><div class="card">'+
+    '<div class="tag">Speaking · '+(S.index+1)+'/'+SPEAKING.length+'</div><h2>🎙️ Práctica oral</h2>'+
+    '<p class="mut">Escucha el modelo y repite en voz alta. Si tu navegador ofrece reconocimiento, compararemos el texto detectado. Esto no equivale a una evaluación fonética profesional.</p>'+
+    '<div class="q">'+esc(entry[0])+'</div><div class="mut">'+esc(entry[1])+'</div>'+
+    '<div class="grid" style="margin-top:12px"><button class="big" data-act="speaksay">🔊 Escuchar modelo</button>'+
+    '<button class="big" data-act="speakrecord" '+(supported?'':'disabled')+'>🎙️ Hablar</button></div>'+
+    (supported?'':'<p class="mut">El reconocimiento no está disponible aquí. Escucha y repite manualmente.</p>')+
+    '<div id="speech-feedback" class="fb" aria-live="polite"></div>'+
+    '<button class="pri big" data-act="speaknext">✅ Practicado · Siguiente</button></div>';
+}
+function startRecognition(){
+  if(!S || !S.speech)return;
+  const R=typeof window!=='undefined' && (window.SpeechRecognition||window.webkitSpeechRecognition);
+  if(!R)return;
+  try{
+    if(speechRecognizer)speechRecognizer.abort();
+    const target=SPEAKING[S.index][0];
+    const rec=new R();speechRecognizer=rec;
+    rec.lang='en-US';rec.interimResults=false;rec.maxAlternatives=1;
+    const fb=$('#speech-feedback');if(fb)fb.textContent='🎙️ Escuchando...';
+    rec.onresult=e=>{
+      if(!S || !S.speech || speechRecognizer!==rec)return;
+      const spoken=e.results[0][0].transcript;
+      const same=nz(spoken)===nz(target);
+      const out=$('#speech-feedback');
+      if(out)out.textContent=(same?'✅ Texto reconocido correctamente: ':'🗣️ El navegador reconoció: ')+spoken+
+        (same?'':' · Intenta repetir la oración.');
+    };
+    rec.onerror=()=>{
+      const out=$('#speech-feedback');
+      if(out)out.textContent='⚠️ No se pudo acceder al micrófono o al reconocimiento de voz. Puedes practicar sin grabación.';
+    };
+    rec.start();
+  }catch(e){
+    const out=$('#speech-feedback');if(out)out.textContent='⚠️ El reconocimiento no está disponible ahora.';
+  }
+}
+function nextSpeaking(){
+  if(!S || !S.speech)return;
+  if(speechRecognizer){try{speechRecognizer.abort()}catch(e){}speechRecognizer=null;}
+  state.skills.speaking=(Number(state.skills.speaking)||0)+1;save();
+  if(S.index+1>=SPEAKING.length){home();return;}
+  S.index++;renderSpeaking();
+}
 /* ====== Estadísticas locales ====== */
 function progressScreen(){
   clearInterval(timer); S=null; locked=false; clearSession();
@@ -925,9 +1002,14 @@ function exportProgress(){
 app.addEventListener('click', e=>{
   const b = e.target.closest('[data-act]'); if(!b) return;
   const a = b.dataset.act;
-  if (a==='home') return home();
+  if (a==='home'){if(speechRecognizer){try{speechRecognizer.abort()}catch(e){}speechRecognizer=null;}return home();}
   if (a==='progress') return progressScreen();
   if (a==='export') return exportProgress();
+  if (a==='listenquiz') return startSession(pick(BANK.filter(q=>q.topic==='dict'&&q.audio),10),{title:'Comprensión auditiva'});
+  if (a==='dictquiz') return startSession(pick(BANK.filter(q=>q.type==='dict'),10),{title:'Dictado'});
+  if (a==='speaksay') return S&&S.speech?say(SPEAKING[S.index][0]):undefined;
+  if (a==='speakrecord') return startRecognition();
+  if (a==='speaknext') return nextSpeaking();
   if (a==='listening') return listeningHome();
   if (a==='speaking') return speakingHome();
   if (a==='reading') return startSession(pick(BANK.filter(q=>q.topic==='read'),Math.min(12,BANK.filter(q=>q.topic==='read').length)),{title:'Reading'});
