@@ -28,7 +28,8 @@ App web de un solo archivo (`index.html`) para estudiar inglés nivel A1 y sacar
 
 ## Qué hace la app (v0.1)
 
-- **Hoy toca:** sesión de 10 preguntas según el plan por fechas (`PLAN` en el código).
+- **📖 Aprender (módulo de estudio):** 10 lecciones en español basadas en el Student Book 1B (unidades 7 y 8) y en el cronograma: was/were, expresiones de tiempo y clima, fechas y años, conectores y secuencia, regulares (-ed y pronunciación), irregulares (todos los del libro con 🔊), negativo, preguntas con did, vocabulario y frases del libro (ropa, disculpas, reacciones) y un resumen con estrategia de prueba. Cada lección tiene ejemplos con audio y una prueba rápida de 3 preguntas, y se marca como "entendida".
+- **Hoy toca:** sesión de 10 preguntas según el plan por fechas (`PLAN` en el código), con acceso a la lección del día.
 - **Sesión inteligente:** repetición espaciada. Las preguntas falladas aparecen más seguido (cajas 0 a 4, tipo Leitner).
 - **Práctica por tema:** was/were, regulares, irregulares, negativo, preguntas, conectores, tiempo y clima, lectura, dictado.
 - **Simulacro de 30 preguntas** con cronómetro de 30 minutos y nota estimada en escala chilena.
@@ -38,7 +39,9 @@ App web de un solo archivo (`index.html`) para estudiar inglés nivel A1 y sacar
 - **Gamificación:** XP, niveles, racha diaria, meta de 20 preguntas por día y cuenta regresiva al examen.
 - **Importar preguntas de ChatGPT:** pega un JSON y las preguntas quedan guardadas en tu navegador.
 
-Banco inicial: 165 preguntas (49 irregulares, 37 regulares, 16 was/were, 15 dictados, 13 preguntas con did, 12 tiempo y clima, 10 negativo, 9 conectores, 4 lectura).
+Banco actual: 218 preguntas (58 irregulares, 40 regulares, 25 tiempo, fechas y clima, 19 was/were, 16 preguntas con did, 15 dictados, 13 negativo, 13 vocabulario del libro, 12 conectores, 7 lectura) y 53 verbos irregulares en las fichas.
+
+Contenido tomado del Student Book Wide Angle 1B (unidades 7 y 8, pp. 4–26, Review pp. 75–76 y Grammar focus pp. 81–82). Las oraciones de práctica son originales, no copias del libro.
 
 ## Estructura del código
 
@@ -48,6 +51,7 @@ Todo está en `index.html`: CSS, HTML y JavaScript sin librerías.
 |---|---|
 | `TOPICS`, `PLAN` | Temas y plan de estudio por fechas |
 | `HAND`, `IRR`, `REG` | Banco de preguntas escritas a mano y listas de verbos |
+| `LESSONS`, `renderBlock()`, `learnHome()`, `openLesson()` | Módulo Aprender: lecciones hechas con bloques (`P`, `R`, `TIP`, `W`, `X`, `TB`, `CK`) |
 | `buildBank()` | Junta todo, más las preguntas importadas, y les asigna un `id` |
 | `pick()`, `weight()` | Selección ponderada por dominio (repetición espaciada) |
 | `record()` | Guarda aciertos, errores, XP y racha |
@@ -64,7 +68,7 @@ Cuatro tipos. Estos son los mismos que se pueden importar desde ChatGPT.
 {"topic":"dict","type":"dict","answer":"We didn't watch the movie."}
 ```
 
-- `topic`: `be`, `reg`, `irr`, `neg`, `q`, `conn`, `time`, `read`, `dict`.
+- `topic`: `be`, `reg`, `irr`, `neg`, `q`, `conn`, `time`, `vocab`, `read`, `dict`.
 - En `mcq`, `answer` es el índice (desde 0) de la opción correcta.
 - En `type`, `answers` lista todas las respuestas aceptadas. Se ignoran mayúsculas, puntuación y apóstrofes curvos.
 

@@ -42,6 +42,20 @@ input:focus,textarea:focus{outline:none;border-color:var(--pri)}
 .tag{font-size:12px;font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:.04em}
 .big-num{font-size:44px;font-weight:800;line-height:1}
 .back{background:none;border:0;color:var(--mut);padding:4px 0;margin-bottom:6px}
+.rule{background:var(--pri2);border-left:4px solid var(--pri);padding:10px 12px;border-radius:10px;margin:12px 0;font-weight:600}
+.ex{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.ex .en{font-weight:700}
+.ex button{flex:none}
+.note{background:var(--okbg);border-left:4px solid var(--ok);padding:10px 12px;border-radius:10px;margin:12px 0}
+.note.warn{background:var(--badbg);border-left-color:var(--bad)}
+.tbl{overflow-x:auto;margin:10px 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--pri2)}
+.ck{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:14px 0}
+.ck .q2{font-weight:700}
+.ckfb{margin-top:6px;font-size:14px}
+.lp{margin:8px 0}
 </style>
 </head>
 <body>
@@ -53,7 +67,7 @@ const EXAM = new Date('2026-12-04T08:00:00');
 const GOAL = 20;
 const LS = 'ing_es4_trainer_v1';
 const LS_SESSION = 'ing_es4_trainer_session_v1';
-const TOPICS = {be:'Was / Were',reg:'Regulares (-ed)',irr:'Irregulares',neg:"Negativo (didn't)",q:'Preguntas (Did…?)',conn:'Conectores',time:'Tiempo y clima',read:'Lectura',dict:'Listening (dictado)'};
+const TOPICS = {be:'Was / Were',reg:'Regulares (-ed)',irr:'Irregulares',neg:"Negativo (didn't)",q:'Preguntas (Did…?)',conn:'Conectores',time:'Tiempo, fechas y clima',vocab:'Vocabulario del libro',read:'Lectura',dict:'Listening (dictado)'};
 const PLAN = [ // [desde, hasta, titulo, temas]
   ['2026-11-13','2026-11-15','Was/were, conectores y tiempo',['be','conn','time']],
   ['2026-11-16','2026-11-18','Verbos regulares (-ed)',['reg']],
@@ -93,7 +107,7 @@ function say(text, rate=.85){
 }
 
 /* ====== Estado (localStorage) ====== */
-let state = {box:{},wrong:{},xp:0,streak:0,lastDay:'',today:{d:'',n:0},custom:[]};
+let state = {box:{},wrong:{},xp:0,streak:0,lastDay:'',today:{d:'',n:0},custom:[],learned:{}};
 let storageFailed = false;
 try {
   const raw = localStorage.getItem(LS);
@@ -105,6 +119,7 @@ try {
     if (!state.wrong || typeof state.wrong !== 'object' || Array.isArray(state.wrong)) state.wrong = {};
     if (!state.today || typeof state.today !== 'object') state.today = {d:'',n:0};
     if (!Array.isArray(state.custom)) state.custom = [];
+    if (!state.learned || typeof state.learned !== 'object' || Array.isArray(state.learned)) state.learned = {};
     state.custom = state.custom.filter(q => q && typeof q === 'object' && typeof q.topic === 'string' && typeof q.type === 'string');
   }
 } catch(e) { storageFailed = true; }
@@ -201,11 +216,61 @@ const HAND = [
  M('read','Last weekend, Ana went to the beach with her friends. It was sunny, but the water was cold. They played volleyball and ate pizza. Ana didn\'t swim because she was tired.\n\nWhy didn\'t Ana swim?',['The water was warm.','She was tired.','It was rainy.'],1,'because she was tired'),
  M('read','Tom woke up late yesterday. He didn\'t have breakfast and he ran to the bus stop. He was late for school, but his teacher wasn\'t angry.\n\nWhat did Tom do first?',['He ran to the bus stop.','He had breakfast.','He woke up late.'],2,'Secuencia: woke up → no breakfast → ran'),
  M('read','Tom woke up late yesterday. He didn\'t have breakfast and he ran to the bus stop. He was late for school, but his teacher wasn\'t angry.\n\nWas the teacher angry?',["Yes, he was.","No, he wasn't.","No, he didn't."],1,"his teacher wasn't angry"),
+ // ---- Del libro 1B (Wide Angle, unidades 7 y 8): fechas, vocabulario, pronunciación, conectores ----
+ T('time','Escribe la fecha con palabras: 5/18',['may eighteenth','may 18th','may the eighteenth'],'En el libro (inglés americano) el mes va primero: 5/18 = May 18th'),
+ T('time','Escribe la fecha con palabras: 7/4',['july fourth','july 4th','july the fourth'],'7/4 = July fourth'),
+ T('time','Escribe la fecha con palabras: 10/31',['october thirty-first','october thirty first','october 31st','october the thirty-first'],'31 → thirty-first'),
+ T('time','Escribe la fecha con palabras: 12/25',['december twenty-fifth','december twenty fifth','december 25th'],'25 → twenty-fifth'),
+ T('time','Escribe la fecha con palabras: 2/2',['february second','february 2nd'],'2 → second'),
+ M('time','¿Cómo se lee el año 1620?',['sixteen twenty','one six two zero','sixteen hundred twenty'],0,'Los años se leen en dos números: sixteen / twenty'),
+ M('time','¿Cómo se lee el año 1984?',['nineteen eighty-four','one nine eight four','ninety-eighty four'],0,'nineteen + eighty-four'),
+ M('time','¿Cómo se lee 2001?',['twenty zero one','two thousand and one','two hundred one'],1,'2000–2009: two thousand (and) one'),
+ M('time','El ordinal de 3 es…',['three','third','threeth'],1,'1st first · 2nd second · 3rd third'),
+ M('time','El ordinal de 12 es…',['twelve','twelveth','twelfth'],2,'12th = twelfth'),
+ M('time','The test is ___ December 4th.',['in','on','at'],1,'on + fecha exacta'),
+ M('time','He opened the hotel ___ the 1890s.',['in','on','ago'],0,'in the + década: in the 1890s'),
+ M('time','Many hotels opened ___ the early 1900s.',['on','in the','last'],1,'in the early / late 1900s'),
+ M('vocab','It is warm and the ___ is out.',['sun','snow','wind'],0,'the sun is out = hay sol'),
+ M('vocab','There are gray ___ in the sky.',['clouds','jeans','shoes'],0,'clouds = nubes'),
+ M('vocab','It was bad weather: a lot of rain and ___.',['wind','dress','hat'],0,'rain and wind = lluvia y viento'),
+ M('vocab','Which word is NOT clothing?',['skirt','jacket','cloudy'],2,'cloudy = nublado (clima)'),
+ T('vocab','«falda» en inglés:',['skirt'],'a skirt'),
+ T('vocab','«chaqueta» en inglés:',['jacket'],'a jacket'),
+ T('vocab','«vestido» en inglés:',['dress'],'a dress'),
+ T('vocab','«polera / camiseta» en inglés:',['t-shirt','t shirt','tshirt'],'a T-shirt'),
+ T('vocab','a pair ___ jeans',['of'],'a pair of jeans / pants / shoes'),
+ M('vocab','You step on someone\'s foot. A short apology:',['Oops, sorry!','Congratulations!','Happy birthday!'],0,'Error pequeño → Oops, sorry! / Sorry about that!'),
+ M('vocab','Your friend says: "I passed my test!" You say:',['Congratulations!',"That's too bad.",'Oops, sorry!'],0,'Buena noticia → Wow, that\'s great! / Congratulations!'),
+ M('vocab','Your friend says: "I lost my wallet!" You say:',['Oh no! That\'s too bad.','Wow, great!','Happy birthday!'],0,'Mala noticia → Oh no! / That\'s too bad.'),
+ M('vocab','Someone says "Sorry I\'m late!" A polite answer:',["Don't worry about it.",'Congratulations!','Happy birthday!'],0,"Aceptar disculpas: It's OK. / Don't worry. / No problem."),
+ M('reg','¿Cómo suena la terminación -ed en «wanted»?',['/t/','/d/','/id/ (sílaba extra)'],2,'Después de t o d suena /id/ y agrega una sílaba: started, ended, wanted'),
+ M('reg','¿Cómo suena -ed en «worked»?',['/t/','/d/','/id/ (sílaba extra)'],0,'Después de k, p, ch, sh, s, f, x suena /t/: worked, watched, passed'),
+ M('reg','¿Cómo suena -ed en «played»?',['/t/','/d/','/id/ (sílaba extra)'],1,'En los demás casos suena /d/: played, called, stayed'),
+ T('irr','We ___ (spend) a lot of money on the trip last year.',['spent'],'spend → spent'),
+ T('irr','He ___ (lose) his keys yesterday.',['lost'],'lose → lost'),
+ T('irr','She ___ (think) it was a good idea.',['thought'],'think → thought'),
+ T('irr','The runner ___ (break) the record in 1954.',['broke'],'break → broke'),
+ T('irr','They ___ (grow) up in Chile.',['grew'],'grow → grew'),
+ M('neg','¿Cuál oración sobre béisbol está bien escrita?',["I didn't played baseball.","I didn't play baseball.","I not play baseball."],1,"didn't + verbo base: I didn't play (NO didn't played)"),
+ M('neg','¿Cuál oración sobre hablar inglés está bien escrita?',["She didn't spoke English.","She didn't speak English.","She no speak English."],1,"didn't + speak (NO didn't spoke)"),
+ T('neg','She ___ (not / speak) English when she arrived.',["didn't speak","did not speak"],"didn't + speak"),
+ M('conn','I finished school in 2015. ___, I went to university.',['After that','Because','But'],0,'After that = después de eso (secuencia)'),
+ M('conn','He lived in Chile for five years. ___ he moved to Spain.',['Then','Because','But'],0,'Then = luego (secuencia)'),
+ M('conn','She arrived in 2010. One year ___, she got a job.',['later','ago','last'],0,'one year later = un año después'),
+ O('q','Did people wear hats in the 1950s?','Did + sujeto + verbo base'),
+ O('q','Did your family travel last summer?','Did + sujeto + verbo base'),
+ O('q','Why were you late yesterday?','Con be: Wh- + were + sujeto'),
+ O('be','Was the weather nice yesterday?','Was + sujeto (con be no se usa did)'),
+ O('be','Were your friends at home last night?','Were + sujeto'),
+ O('be',"Why wasn't she at work on Friday?","Wh- + wasn't + sujeto"),
+ M('read','Marta was born in Chile in 1990. She grew up in a small town. She didn\'t like school, but she loved music. In 2008, she moved to Santiago. Then she studied music for four years. After that, she got a job in a school.\n\nWhere did Marta grow up?',['In a small town.','In Santiago.','In a school.'],0,'She grew up in a small town.'),
+ M('read','Marta was born in Chile in 1990. She grew up in a small town. She didn\'t like school, but she loved music. In 2008, she moved to Santiago. Then she studied music for four years. After that, she got a job in a school.\n\nWhat did Marta do after she studied music?',['She moved to Santiago.','She got a job in a school.','She was born in Chile.'],1,'After that, she got a job in a school.'),
+ M('read','Marta was born in Chile in 1990. She grew up in a small town. She didn\'t like school, but she loved music. In 2008, she moved to Santiago. Then she studied music for four years. After that, she got a job in a school.\n\nDid Marta like school?',['Yes, she did.',"No, she didn't.",'Yes, she was.'],1,"She didn't like school, but she loved music."),
  // Dictado
  ...["I was at home yesterday.","They weren't at school last week.","She went to the beach two days ago.","We didn't watch the movie.","Did you eat breakfast this morning?","He studied English last night.","It was cold, but we played outside.","I didn't go out because it rained.","Where did you meet your friends?","My parents traveled to Chile in 2019.","She called me and told me the news.","Were you at the party on Saturday?","I had pizza for dinner last night.","The weather was sunny yesterday.","We visited a museum and took many photos."].map(D)
 ];
 
-const IRR = [['go','went','ir'],['have','had','tener'],['see','saw','ver'],['meet','met','conocer / encontrarse'],['come','came','venir'],['do','did','hacer'],['eat','ate','comer'],['buy','bought','comprar'],['get','got','conseguir / obtener'],['make','made','hacer / fabricar'],['take','took','tomar / llevar'],['write','wrote','escribir'],['say','said','decir'],['give','gave','dar'],['read','read','leer (se pronuncia "red")'],['sleep','slept','dormir'],['drink','drank','beber'],['drive','drove','manejar'],['swim','swam','nadar'],['run','ran','correr'],['sit','sat','sentarse'],['speak','spoke','hablar'],['tell','told','contar / decir'],['think','thought','pensar'],['know','knew','saber / conocer'],['leave','left','salir / dejar'],['find','found','encontrar'],['lose','lost','perder'],['wear','wore','usar (ropa)'],['sing','sang','cantar'],['fly','flew','volar'],['begin','began','empezar'],['bring','brought','traer'],['build','built','construir'],['feel','felt','sentir'],['forget','forgot','olvidar'],['pay','paid','pagar'],['put','put','poner'],['sell','sold','vender'],['send','sent','enviar'],['stand','stood','estar de pie'],['win','won','ganar'],['wake','woke','despertar'],['spend','spent','gastar / pasar tiempo'],['cut','cut','cortar'],['hear','heard','oír'],['keep','kept','guardar / mantener'],['ride','rode','montar'],['draw','drew','dibujar']];
+const IRR = [['go','went','ir'],['have','had','tener'],['see','saw','ver'],['meet','met','conocer / encontrarse'],['come','came','venir'],['do','did','hacer'],['eat','ate','comer'],['buy','bought','comprar'],['get','got','conseguir / obtener'],['make','made','hacer / fabricar'],['take','took','tomar / llevar'],['write','wrote','escribir'],['say','said','decir'],['give','gave','dar'],['read','read','leer (se pronuncia "red")'],['sleep','slept','dormir'],['drink','drank','beber'],['drive','drove','manejar'],['swim','swam','nadar'],['run','ran','correr'],['sit','sat','sentarse'],['speak','spoke','hablar'],['tell','told','contar / decir'],['think','thought','pensar'],['know','knew','saber / conocer'],['leave','left','salir / dejar'],['find','found','encontrar'],['lose','lost','perder'],['wear','wore','usar (ropa)'],['sing','sang','cantar'],['fly','flew','volar'],['begin','began','empezar'],['bring','brought','traer'],['build','built','construir'],['feel','felt','sentir'],['forget','forgot','olvidar'],['pay','paid','pagar'],['put','put','poner'],['sell','sold','vender'],['send','sent','enviar'],['stand','stood','estar de pie'],['win','won','ganar'],['wake','woke','despertar'],['spend','spent','gastar / pasar tiempo'],['cut','cut','cortar'],['hear','heard','oír'],['keep','kept','guardar / mantener'],['ride','rode','montar'],['draw','drew','dibujar'],['hold','held','sostener / mantener (un récord)'],['break','broke','romper / batir (un récord)'],['set','set','establecer / fijar'],['grow','grew','crecer']];
 const REG = [['play','played'],['live','lived'],['study','studied'],['stop','stopped'],['carry','carried'],['plan','planned'],['watch','watched'],['dance','danced'],['cry','cried'],['visit','visited'],['listen','listened'],['start','started'],['clean','cleaned'],['enjoy','enjoyed'],['try','tried'],['drop','dropped'],['wait','waited'],['call','called'],['help','helped'],['need','needed'],['love','loved'],['open','opened'],['work','worked'],['cook','cooked'],['move','moved'],['use','used'],['arrive','arrived'],['walk','walked'],['ask','asked'],['want','wanted'],['decide','decided'],['stay','stayed']];
 
 function buildBank(){
@@ -218,6 +283,195 @@ function buildBank(){
   return out;
 }
 let BANK = buildBank();
+
+/* ====== Lecciones (módulo Aprender) ====== */
+const md = s => esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+const lessonIdx = k => LESSONS.findIndex(l => l.topic === k);
+const P = x => ({t:'p',x}), R = x => ({t:'rule',x}), TIP = x => ({t:'tip',x}), W = x => ({t:'warn',x});
+const X = (en,es) => ({t:'ex',en,es});
+const TB = (head,rows) => ({t:'table',head,rows});
+const CK = (q,options,answer,explain) => ({t:'check',q,options,answer,explain});
+let L = {i:0};
+
+const LESSONS = [
+ {id:'be',topic:'be',emoji:'🟦',min:8,title:'Was y were (ser/estar en pasado)',src:'Libro 1B · 7.1 (pp. 4–6) · Grammar focus p. 81',blocks:[
+  P("En pasado, **am / is** pasan a ser **was** y **are** pasa a ser **were**. Es el verbo de la Unidad 7 y el único que **no usa did** para negar ni preguntar."),
+  TB(['Sujeto','Pasado de be','Ejemplo'],[['I / he / she / it','**was**','She was happy.'],['you / we / they','**were**','They were tired.']]),
+  X('I was at home yesterday.','Yo estuve en casa ayer.'),
+  X('They were in Paris last week.','Ellos estuvieron en París la semana pasada.'),
+  X('The weather was cold yesterday.','El clima estuvo frío ayer.'),
+  R("Negativo: was + not = **wasn't**  ·  were + not = **weren't**"),
+  X("She wasn't happy at the party.",'Ella no estaba feliz en la fiesta.'),
+  X("We weren't at school last week.",'No estuvimos en el colegio la semana pasada.'),
+  R('Preguntas: **Was / Were** + sujeto…?  (se invierte, sin did)'),
+  X('Were you at the gym last night?','¿Estuviste en el gimnasio anoche?'),
+  X('Was he your teacher in 2020?','¿Era él tu profesor en 2020?'),
+  X('Where were you last night?','¿Dónde estuviste anoche?'),
+  P("**Respuestas cortas:** Yes, I **was**. · No, I **wasn't**. · Yes, they **were**. · No, we **weren't**."),
+  TIP("En el libro, el clima y los lugares se describen con **there was / there were**: There was a lot of rain. (singular → was, plural → were)."),
+  W("Nunca uses did con be: ✗ Did you be at home?  ✗ I didn't was there.  ✓ Were you at home?  ✓ I wasn't there."),
+  CK('Yesterday she ___ at the library.',['were','was','did'],1,'she → was'),
+  CK('___ they at home last night?',['Was','Did','Were'],2,'they → Were they…?'),
+  CK("We ___ at the party. (negativo)",["wasn't","weren't","didn't be"],1,"we → weren't")
+ ]},
+ {id:'time',topic:'time',emoji:'⏰',min:7,title:'Expresiones de tiempo y clima',src:'Libro 1B · 7.1 (p. 4) y 8.1 (p. 17)',blocks:[
+  P("Para hablar del pasado necesitas decir **cuándo** pasó. Estas expresiones acompañan al pasado simple (cuadro \"Time expressions\" del libro)."),
+  TB(['Expresión','Significa','Ejemplo'],[['yesterday','ayer','I called him yesterday.'],['last night / week / month / year','anoche / la semana / el mes / el año pasado','She traveled last year.'],['two days / weeks / months / years ago','hace dos días / semanas / meses / años','I saw him two days ago.'],['on + día o fecha','el lunes / el 15 de agosto','The party was on Saturday.'],['in + mes o año','en enero / en 1989','I was born in 1999.'],['in the early / late + década','a comienzos / fines de los…','in the early 1900s']]),
+  X('I visited my grandma last week.','Visité a mi abuela la semana pasada.'),
+  X('We went to Spain two years ago.','Fuimos a España hace dos años.'),
+  X('Hotels began to open in the late 1800s.','Los hoteles empezaron a abrirse a fines de los 1800.'),
+  R('**in** + año / mes / década · **on** + día / fecha exacta · **last** + sustantivo · número + sustantivo + **ago**'),
+  W("**ago** va al final: two years **ago**. Y se dice **last week**, sin preposición (no 'in last week')."),
+  P('**El clima (weather), unidad 7.1:**'),
+  TB(['Inglés','Español'],[['sunny / the sun is out','soleado / hay sol'],['cloudy / gray clouds in the sky','nublado / nubes grises'],['rainy / a lot of rain','lluvioso / mucha lluvia'],['windy / a lot of wind','ventoso / mucho viento'],['snowy / a lot of snow','nevado / mucha nieve'],['cold · cool · warm · hot','frío · fresco · templado · caluroso']]),
+  X('It was sunny yesterday.','Ayer estuvo soleado.'),
+  X('It was cold, but we played outside.','Hizo frío, pero jugamos afuera.'),
+  TIP('El clima en pasado usa **was**: It **was** rainy. (it → was)'),
+  CK('We visited Chile three years ___.',['last','ago','before'],1,'three years ago'),
+  CK('The hotel opened ___ the late 1800s.',['in','on','at'],0,'in the late 1800s'),
+  CK('It was ___ and cold. We saw a lot of snow.',['sunny','snowy','windy'],1,'snowy = nevado')
+ ]},
+ {id:'dates',topic:'time',emoji:'📅',min:8,title:'Fechas y años',src:'Libro 1B · 7.2 (pp. 7–9) y 8.5 (p. 26)',blocks:[
+  P('En la unidad 7.2 aprendes a **escribir y decir fechas**. El libro usa el formato americano: **mes / día / año**.'),
+  TB(['Escrito','Se dice','Significa'],[['4/18/1988','April eighteenth, nineteen eighty-eight','18 de abril de 1988'],['5/18','May eighteenth','18 de mayo'],['7/4','July fourth','4 de julio'],['12/25','December twenty-fifth','25 de diciembre']]),
+  W('En inglés americano **5/18 = mayo 18** (el mes va primero). En Chile se escribe día/mes: ¡no los confundas!'),
+  P('**Los días se dicen con números ordinales** (casi todos terminan en -th, algunos son irregulares):'),
+  TB(['1','2','3','4','5','6','7','8'],[['first','second','third','fourth','fifth','sixth','seventh','eighth']]),
+  TB(['9','10','11','12','20','30','31'],[['ninth','tenth','eleventh','twelfth','twentieth','thirtieth','thirty-first']]),
+  TIP('Escritura corta: 1st, 2nd, 3rd, 4th … 21st, 22nd, 23rd, 24th …'),
+  P('**Los años** se leen en dos números:'),
+  TB(['Año','Se lee'],[['1620','sixteen twenty'],['1984','nineteen eighty-four'],['1908','nineteen oh eight'],['2016','twenty sixteen'],['2001','two thousand and one'],['2012','two thousand twelve  ·  twenty twelve']]),
+  P('**Los meses:** January, February, March, April, May, June, July, August, September, October, November, December.'),
+  X('The test is on December fourth.','La prueba es el 4 de diciembre.'),
+  X('She was born on July fourteenth, nineteen ninety.','Ella nació el 14 de julio de 1990.'),
+  X('Many hotels opened in the late eighteen hundreds.','Muchos hoteles abrieron a fines de los años 1800.'),
+  R('**on** + fecha exacta (on March 3rd) · **in** + mes o año (in March, in 2019)'),
+  CK('¿Cómo se dice 10/31?',['October thirty-first','October thirty-one','Tenth thirty-first'],0,'Mes + ordinal: October thirty-first'),
+  CK('El ordinal de 3 es…',['three','third','threeth'],1,'first, second, third'),
+  CK('¿Cómo se lee 1984?',['one nine eight four','nineteen eighty-four','ninety-eighty four'],1,'nineteen + eighty-four')
+ ]},
+ {id:'conn',topic:'conn',emoji:'🔗',min:8,title:'Conectores y secuencia',src:'Libro 1B · 7.1 p. 6 (because) · 7.2 p. 7 (and/but) · 8.2 p. 20 (secuencia)',blocks:[
+  P("Los conectores unen ideas. El libro enseña tres en la Unidad 7: **and, but, because**."),
+  TB(['Conector','Significa','Para qué sirve (según el libro)'],[['and','y','conecta ideas relacionadas'],['but','pero','conecta ideas diferentes'],['because','porque','explica el motivo, hace el texto más interesante']]),
+  X('We visited a museum and had lunch.','Visitamos un museo y almorzamos.'),
+  X('The food was good, but it was expensive.','La comida estaba buena, pero era cara.'),
+  X("I didn't go out because it rained.",'No salí porque llovió.'),
+  R("¿Respondes a un **por qué**? → **because**. ¿Hay contraste? → **but**. ¿Sumas algo? → **and**."),
+  TIP('Antes de **but** normalmente va una coma: I wanted to go out, **but** it rained.'),
+  P('**Palabras de secuencia (unidad 8.2):** sirven para contar eventos en orden.'),
+  TB(['Palabra','Significa'],[['then','luego'],['next','después / a continuación'],['after that','después de eso'],['later','más tarde'],['one year later / two years later / one month later','un año después / dos años después / un mes después']]),
+  X('I finished school in 2015. After that, I went to university.','Terminé el colegio en 2015. Después de eso, fui a la universidad.'),
+  X('She lived in Chile for five years. Then she moved to Spain.','Vivió cinco años en Chile. Luego se mudó a España.'),
+  X('He arrived in 2010. One year later, he got a job.','Llegó en 2010. Un año después, consiguió trabajo.'),
+  TIP('Al escribir una biografía, ordena así: **was born → grew up → began school → then / next → after that → later**.'),
+  CK('I like pizza, ___ I don\'t like cheese.',['and','but','because'],1,'contraste → but'),
+  CK('She stayed home ___ she was sick.',['because','but','and'],0,'motivo → because'),
+  CK('First I woke up. ___ I ate breakfast.',['Then','Because','But'],0,'secuencia → Then')
+ ]},
+ {id:'reg',topic:'reg',emoji:'✏️',min:9,title:'Pasado de los verbos regulares (-ed)',src:'Libro 1B · 7.3 (pp. 10–11) · Grammar focus p. 81',blocks:[
+  R('Pasado regular = verbo + **-ed**. Es igual para todos los sujetos: I played, she played, they played.'),
+  X('We worked for Oxfam in 2008.','Trabajamos para Oxfam en 2008.'),
+  X('They planned their trip.','Ellos planearon su viaje.'),
+  X('He raised money for charity.','Él juntó dinero para una caridad.'),
+  P('**Reglas de ortografía:**'),
+  TB(['Si el verbo…','Haz esto','Ejemplos'],[['termina normal','agrega **-ed**','work → worked · watch → watched · play → played'],['termina en -e','agrega solo **-d**','live → lived · dance → danced · use → used'],['consonante + y','cambia la y por **-ied**','study → studied · carry → carried · try → tried'],['vocal + y','agrega **-ed** (la y no cambia)','play → played · enjoy → enjoyed · stay → stayed'],['1 vocal + 1 consonante (verbo corto)','duplica la consonante + **-ed**','stop → stopped · plan → planned · drop → dropped']]),
+  P('**Pronunciación de -ed** (cuadro "Pronunciation skill" del libro): hay tres sonidos.'),
+  TB(['Sonido','Cuándo','Ejemplos'],[['**/id/** (sílaba extra)','después de t o d','started · ended · wanted · visited · added'],['**/t/**','después de ch, f, k, p, ss, sh, x','worked · passed · watched · fixed · washed · stopped'],['**/d/**','en los demás casos','called · stayed · raised · played · traveled']]),
+  X('started','suena /id/ y tiene 2 sílabas'),
+  X('worked','suena /t/ y tiene 1 sílaba'),
+  X('called','suena /d/ y tiene 1 sílaba'),
+  P('**Verbos regulares que aparecen en el libro:** appear, call, want, plan, use, travel, return, raise, visit, start, work, study, show, paint, play, wash, stop, add, check, walk, arrive, cook.'),
+  TIP('¿Duplicar la consonante? Solo si el verbo es corto y termina en consonante-vocal-consonante (stop, plan, drop). Si tiene más sílabas (visit, listen) no se duplica.'),
+  CK('Pasado de "study":',['studyed','studied','studed'],1,'consonante + y → -ied'),
+  CK('Pasado de "stop":',['stoped','stopped','stopt'],1,'verbo corto CVC → duplica la p'),
+  CK('¿Cómo suena -ed en "wanted"?',['/t/','/d/','/id/ (sílaba extra)'],2,'después de t o d → /id/')
+ ]},
+ {id:'irr',topic:'irr',emoji:'🧩',min:10,title:'Verbos irregulares',src:'Libro 1B · 8.1 (pp. 16–17) · Grammar focus p. 82',blocks:[
+  P("Los irregulares **no llevan -ed**: cada uno cambia de forma y hay que memorizarlos. Pero tienen patrones que ayudan."),
+  P('**Los del cuadro del libro (8.1):** begin → began · buy → bought · do → did · get → got · go → went · have → had · know → knew · lose → lost · make → made · see → saw · spend → spent · take → took · think → thought · write → wrote.'),
+  X('I went to the park.','Fui al parque.'),
+  X('She had pizza for dinner last night.','Ella comió pizza anoche.'),
+  X('We saw a movie yesterday.','Vimos una película ayer.'),
+  X('He bought a new phone.','Él compró un teléfono nuevo.'),
+  P('**Patrones para memorizarlos:**'),
+  TB(['Patrón','Verbos'],[['Igual en pasado','put → put · cut → cut · set → set · read → read (se pronuncia "red")'],['-ought','buy → bought · bring → brought · think → thought'],['-ew','know → knew · fly → flew · draw → drew · grow → grew'],['i → a','begin → began · drink → drank · sing → sang · swim → swam · sit → sat · run → ran'],['-ept','sleep → slept · keep → kept'],['terminan en -t','feel → felt · leave → left · spend → spent · send → sent · build → built · lose → lost'],['-old / -eld','sell → sold · tell → told · hold → held'],['o / -oke / -ore / -ove / -ote','speak → spoke · wake → woke · break → broke · wear → wore · forget → forgot · drive → drove · ride → rode · write → wrote'],['Muy irregulares (memorízalos)','go → went · have → had · do → did · see → saw · eat → ate · come → came · give → gave · take → took · make → made · get → got · say → said · meet → met · find → found · pay → paid · hear → heard · win → won · stand → stood']]),
+  W("Los irregulares se usan **solo en afirmativo**. Con did / didn't el verbo vuelve a su forma base: ✓ I **went** home.  ✓ I didn't **go** home."),
+  TIP('Método: aprende 10 al día con las fichas 🃏 de la app y repítelos en voz alta: go – went, have – had.'),
+  P('**Lista completa de la app** (toca 🔊 para escuchar):'),
+  {t:'irrall'},
+  CK('Pasado de "go":',['goed','went','gone'],1,'go → went'),
+  CK('Pasado de "buy":',['buyed','bought','boughted'],1,'buy → bought'),
+  CK('She ___ a letter last night. (write)',['wrote','writed','written'],0,'write → wrote')
+ ]},
+ {id:'neg',topic:'neg',emoji:'🚫',min:7,title:"Negativo con didn't",src:'Libro 1B · 8.2 (pp. 18–20) · Grammar focus p. 82',blocks:[
+  R("Negativo: sujeto + **didn't** + verbo en **base**"),
+  P("El libro lo explica así: se forma **igual para regulares e irregulares**."),
+  TB(['Afirmativo','Negativo'],[['I went to school.',"I **didn't go** to school."],['She watched the movie.',"She **didn't watch** the movie."],['We ate lunch.',"We **didn't eat** lunch."],['They had breakfast.',"They **didn't have** breakfast."]]),
+  X("I didn't have brothers or sisters.",'No tenía hermanos ni hermanas.'),
+  X("I didn't play baseball.",'No jugué béisbol.'),
+  X("I didn't speak English.",'No hablaba inglés.'),
+  W("Después de didn't el verbo **no va en pasado**: ✗ I didn't played / ✗ I didn't spoke.  ✓ I didn't **play** / ✓ I didn't **speak**. (didn't ya lleva el pasado)"),
+  TIP("**didn't** = did not. En escritos formales se usa la forma larga: I did not go."),
+  W("Con **be** no se usa didn't: ✗ He didn't be at home.  ✓ He **wasn't** at home."),
+  P('**Biografía de ejemplo** (practica leyendo en voz alta):'),
+  X("I was born in a small town. I didn't like school, but I loved music.",'Nací en un pueblo pequeño. No me gustaba el colegio, pero amaba la música.'),
+  X("I didn't know anyone here, and I didn't speak English.",'No conocía a nadie aquí y no hablaba inglés.'),
+  CK('He ___ eat breakfast yesterday.',["didn't","doesn't","wasn't"],0,"yesterday → didn't + base"),
+  CK("I didn't ___ the movie.",['see','saw','seen'],0,"didn't + see (base)"),
+  CK('She ___ at home. (negativo, be)',["didn't be","wasn't","didn't was"],1,"con be: wasn't")
+ ]},
+ {id:'q',topic:'q',emoji:'❓',min:9,title:'Preguntas con Did',src:'Libro 1B · 7.2 p. 9 (be) · 8.3 (pp. 21–23) · Grammar focus pp. 81–82',blocks:[
+  R('Pregunta: **Did** + sujeto + verbo en **base** + …?'),
+  X('Did they really wear that?','¿De verdad usaban eso?'),
+  X('Did women wear pants?','¿Las mujeres usaban pantalones?'),
+  X('Did you meet her at the party?','¿La conociste en la fiesta?'),
+  P("**Respuestas cortas** (cuadro del libro): se usa **did / didn't** y **no** se repite el verbo principal."),
+  X("No, they didn't.",'No, no lo hacían.'),
+  X('Yes, they did.','Sí, lo hacían.'),
+  R('Preguntas con Wh-: Wh- + **did** + sujeto + verbo base'),
+  X('Where did they go last summer?','¿Dónde fueron el verano pasado?'),
+  X('What did you eat for lunch?','¿Qué almorzaste?'),
+  X('When did you arrive?','¿Cuándo llegaste?'),
+  X('Why did she leave early?','¿Por qué se fue temprano?'),
+  TB(['Tipo de verbo','Pregunta'],[['Con be','**Were** you at home? · **Was** she tired? · Where **were** you?'],['Con cualquier otro verbo','**Did** you go home? · **Did** she study? · What **did** you do?']]),
+  W('✗ Did you went to the park?  ✓ Did you **go** to the park?   —  el pasado ya está en **did**.'),
+  TIP('En los ejercicios de ordenar palabras (como los de la Review p. 75), empieza por la palabra Wh- o por Did / Was / Were y recuerda el signo de interrogación.'),
+  CK('Did you ___ pizza?',['eat','ate','eaten'],0,'Did + base'),
+  CK('Where ___ she go?',['did','was','does'],0,'Wh- + did + sujeto + base'),
+  CK('Did he call? — No, he ___.',["didn't","wasn't","doesn't"],0,"respuesta corta: didn't")
+ ]},
+ {id:'vocab',topic:'vocab',emoji:'🧥',min:8,title:'Vocabulario y frases del libro',src:'Libro 1B · 7.1, 7.4, 7.5, 8.3, 8.4',blocks:[
+  P('Palabras y frases útiles que aparecen en las unidades 7 y 8.'),
+  P('**La ropa (8.3):**'),
+  TB(['Inglés','Español'],[['a shirt','una camisa'],['a T-shirt','una polera / camiseta'],['a jacket','una chaqueta'],['a dress','un vestido'],['a skirt','una falda'],['a hat','un sombrero / gorro'],['a pair of jeans','un par de jeans'],['a pair of pants','un pantalón'],['a pair of shoes','un par de zapatos']]),
+  TIP('**jeans, pants y shoes** son plurales: se cuentan como "a pair of…". Dices: a pair of jeans, two pairs of shoes.'),
+  P('**El clima (7.1):**'),
+  TB(['Inglés','Español'],[["It's warm. The sun is out.",'Hace calor templado. Hay sol.'],['There are gray clouds in the sky.','Hay nubes grises en el cielo.'],["There's a lot of rain and wind.",'Hay mucha lluvia y viento.'],["There's a lot of snow. It's cold.",'Hay mucha nieve. Hace frío.'],["It's nice and cool.",'Está agradable y fresco.'],["It's hot!",'¡Hace calor!']]),
+  P('**Pedir disculpas (7.4 y 7.5):**'),
+  TB(['Situación','Qué decir'],[['Error pequeño',"Oops, sorry! · Sorry about that! · Sorry I'm late! · My mistake!"],['Error importante',"I'm (really / very / so) sorry for… · I missed your call."],['Aceptar una disculpa',"It's OK. · That's OK. · Don't worry (about it). · No problem."],['Dar una excusa',"I'm really sorry. I was very busy. · I missed your party because I was sick."]]),
+  X("I'm really sorry for missing your call yesterday. I was very busy.",'Lamento no haber contestado tu llamada ayer. Estaba muy ocupado.'),
+  X("Sorry I'm late! My bus was late.",'¡Perdón por llegar tarde! Mi bus llegó tarde.'),
+  P('**Reaccionar a noticias (8.4):**'),
+  TB(['Tu amigo dice…','Tú respondes…'],[['I passed my test!',"Wow, that's great! · Congratulations!"],["Today's my birthday.",'Happy birthday!'],["I didn't pass the test.","Oh, I'm sorry! · That's too bad."],['I lost my wallet!','Oh no!'],['I got a new job.',"That's cool! · That's great!"]]),
+  TIP('El tono de voz también importa: si la noticia es emocionante, suena emocionado.'),
+  CK('Your friend says: "I passed my test!" You say:',['Congratulations!',"That's too bad.",'Oops, sorry!'],0,'buena noticia → Congratulations!'),
+  CK('Which word is NOT clothing?',['skirt','jacket','cloudy'],2,'cloudy = nublado'),
+  CK('You step on someone\'s foot. You say:',['Oops, sorry!','Happy birthday!','Congratulations!'],0,'error pequeño → Oops, sorry!')
+ ]},
+ {id:'summary',topic:null,emoji:'🎯',min:6,title:'Resumen y estrategia para la prueba',src:'Review pp. 75–76 · Grammar focus pp. 81–82',blocks:[
+  P("Antes de responder cualquier ejercicio hazte estas 3 preguntas:"),
+  R('1) ¿Hay **did** o **didn\'t**? → el verbo va en **base**.   2) ¿El verbo es **be**? → **was / were / wasn\'t / weren\'t / Was…? / Were…?**   3) ¿Es afirmativo? → verbo + **-ed** o **forma irregular**.'),
+  TB(['','Afirmativo','Negativo','Pregunta'],[['be','She **was** tired.',"She **wasn't** tired.",'**Was** she tired?'],['regular','I **played**.',"I **didn't play**.",'**Did** you **play**?'],['irregular','I **went**.',"I **didn't go**.",'**Did** you **go**?']]),
+  P('**Qué tipo de ejercicios trae la Review del libro (pp. 75–76):**'),
+  TB(['Ejercicio','Qué hacer'],[['Escribir fechas con palabras','5/18 → May eighteenth'],['Elegir la palabra lógica','clima: cloudy / windy / cold / hot…'],['Completar con was, wasn\'t, were, weren\'t','según el sujeto'],['Ordenar palabras para hacer preguntas','con signo de interrogación'],['Escribir el pasado de un verbo con palabras dadas','walk / home → We walked home…'],['Completar con in / in the / ago / last / on','expresiones de tiempo'],['Completar con el pasado de irregulares','spend, have, write, buy, think, make, take'],['Escribir preguntas yes/no en pasado','Did + sujeto + base…?']]),
+  P('**Estrategia:**'),
+  TB(['Haz esto','Por qué'],[['Lee completo y busca yesterday / last / ago','Te dice que es pasado'],["Si ves did o didn't, no pongas -ed",'El verbo va en base'],['Revisa la ortografía de -ed (studied, stopped)','Es donde se pierden puntos'],['Contesta todo, no dejes en blanco','Una respuesta en blanco siempre es incorrecta'],['Usa la prueba formativa como simulacro','Es la mejor pista del formato']]),
+  TIP('Cuando termines las lecciones, haz un **Simulacro** de 30 preguntas y repite tus errores.'),
+  CK('I ___ at school yesterday. (negativo, be)',["wasn't","weren't","didn't"],0,"I → wasn't"),
+  CK("They didn't ___ the bus.",['took','take','takes'],1,"didn't + base"),
+  CK('___ she see Tom last week?',['Was','Did','Does'],1,'verbo normal en pasado → Did')
+ ]}
+];
 
 /* ====== Selección con repetición espaciada ====== */
 const weight = q => { const b = state.box[q.id]; return b===undefined ? 5 : [8,4,2,1,.4][b]; };
@@ -327,12 +581,14 @@ function home(){
   const pct = Math.round(100*totM/BANK.length);
   const rows = Object.keys(TOPICS).map(k => {
     const qs = BANK.filter(q=>q.topic===k); const m = qs.filter(mastered).length;
-    return `<div class="row"><div style="flex:1"><b>${TOPICS[k]}</b> <span class="mut">${m}/${qs.length}</span><div class="bar"><i style="width:${qs.length?100*m/qs.length:0}%"></i></div></div><button class="sm" data-act="topic" data-k="${k}">Practicar</button></div>`;
+    return `<div class="row"><div style="flex:1"><b>${TOPICS[k]}</b> <span class="mut">${m}/${qs.length}</span><div class="bar"><i style="width:${qs.length?100*m/qs.length:0}%"></i></div></div><button class="sm" data-act="topic" data-k="${k}">Practicar</button>${lessonIdx(k)>=0?`<button class="sm" data-act="lesson" data-i="${lessonIdx(k)}" aria-label="Ver lección">📖</button>`:''}</div>`;
   }).join('');
   app.innerHTML = header() + `
   <div class="card"><div class="tag">Hoy toca</div><h2>${esc(plan[2])}</h2>
     <div class="mut">Meta del día: ${Math.min(n,GOAL)}/${GOAL} preguntas</div><div class="bar" style="margin:6px 0 12px"><i style="width:${Math.min(100,100*n/GOAL)}%"></i></div>
-    <button class="pri big" data-act="plan">▶ Empezar sesión de hoy (10 preguntas)</button></div>
+    ${(()=>{ const li = plan[3].map(lessonIdx).find(i=>i>=0); return li>=0 ? `<button class="big" style="margin-bottom:8px" data-act="lesson" data-i="${li}">📖 Primero estudia la lección de hoy</button>` : ''; })()}
+    <button class="pri big" data-act="plan">▶ Empezar sesión de hoy (10 preguntas)</button>
+    <button class="big" style="margin-top:8px" data-act="learn">📖 Aprender: todas las lecciones (${LESSONS.filter(l=>state.learned[l.id]).length}/${LESSONS.length})</button></div>
   <div class="grid">
     <button class="big" data-act="smart">🧠 Sesión inteligente</button>
     <button class="big" data-act="exam">📝 Simulacro (30)</button>
@@ -453,7 +709,7 @@ function importScreen(){
 {"topic":"q","type":"type","q":"Did they like the food? — No, they ___.","answers":["didn't"],"explain":"respuesta corta"}
 {"topic":"q","type":"order","answer":"Where did he go last night?","explain":"Wh- + did + sujeto + verbo base"}
 {"topic":"dict","type":"dict","answer":"We didn't watch the movie."}
-Valores permitidos de "topic": be, reg, irr, neg, q, conn, time, read, dict. En "mcq", "answer" es el número (empezando en 0) de la opción correcta, y pon tres opciones. Mezcla los 4 formatos. Las explicaciones ("explain") van en español, cortas.`;
+Valores permitidos de "topic": be, reg, irr, neg, q, conn, time, vocab, read, dict. En "mcq", "answer" es el número (empezando en 0) de la opción correcta, y pon tres opciones. Mezcla los 4 formatos. Las explicaciones ("explain") van en español, cortas.`;
   app.innerHTML = header() + `<button class="back" data-act="home">← Volver</button>
   <div class="card"><h2>Agregar preguntas de ChatGPT</h2>
   <ol><li>Copia este mensaje y pégalo en ChatGPT.</li><li>Copia la respuesta completa (el JSON) y pégala aquí abajo.</li><li>Toca Importar. Las preguntas quedan en tu app.</li></ol>
@@ -494,17 +750,74 @@ function doImport(){
   msg.textContent = `✅ Importadas: ${ok}. ${bad?'Con error (ignoradas): '+bad+'. ':''}${duplicates?'Duplicadas (ignoradas): '+duplicates+'.':''}`;
 }
 
+/* ====== Pantallas del módulo Aprender ====== */
+function renderBlock(b,bi){
+  switch(b.t){
+    case 'p': return `<p class="lp">${md(b.x)}</p>`;
+    case 'rule': return `<div class="rule">${md(b.x)}</div>`;
+    case 'tip': return `<div class="note">💡 ${md(b.x)}</div>`;
+    case 'warn': return `<div class="note warn">⚠️ ${md(b.x)}</div>`;
+    case 'ex': return `<div class="ex"><button class="sm" data-act="say" data-t="${esc(b.en)}" aria-label="Escuchar">🔊</button><div><div class="en">${esc(b.en)}</div><div class="mut">${esc(b.es)}</div></div></div>`;
+    case 'table': return `<div class="tbl"><table><tr>${b.head.map(h=>`<th>${md(h)}</th>`).join('')}</tr>${b.rows.map(r=>`<tr>${r.map(c=>`<td>${md(c)}</td>`).join('')}</tr>`).join('')}</table></div>`;
+    case 'irrall': return `<div class="tbl"><table><tr><th></th><th>Base</th><th>Pasado</th><th>Significado</th></tr>${IRR.map(([a,p,es])=>`<tr><td><button class="sm" data-act="say" data-t="${esc(a+'. '+p)}" aria-label="Escuchar">🔊</button></td><td>${esc(a)}</td><td><b>${esc(p)}</b></td><td>${esc(es)}</td></tr>`).join('')}</table></div>`;
+    case 'check': return `<div class="ck"><div class="tag">Prueba rápida</div><div class="q2">${md(b.q)}</div>${b.options.map((o,k)=>`<button class="opt" data-act="lchk" data-b="${bi}" data-k="${k}">${esc(o)}</button>`).join('')}<div class="ckfb"></div></div>`;
+  }
+  return '';
+}
+function learnHome(){
+  clearInterval(timer); S = null; locked = false; clearSession();
+  const done = LESSONS.filter(l=>state.learned[l.id]).length;
+  app.innerHTML = header() + `<button class="back" data-act="home">← Inicio</button>
+  <div class="card"><h2>📖 Aprender</h2><div class="mut">Lecciones basadas en el Student Book 1B (unidades 7 y 8) y en el cronograma de la ES4. Lee, escucha los ejemplos 🔊 y responde la prueba rápida. Después practica el tema. ${done}/${LESSONS.length} lecciones entendidas.</div><div class="bar" style="margin-top:8px"><i style="width:${100*done/LESSONS.length}%"></i></div></div>
+  <div class="card">${LESSONS.map((l,i)=>`<div class="row"><div style="flex:1"><b>${l.emoji} ${i+1}. ${esc(l.title)}</b><div class="mut">${l.min} min${state.learned[l.id]?' · ✅ entendida':''}</div></div><button class="sm ${state.learned[l.id]?'':'pri'}" data-act="lesson" data-i="${i}">${state.learned[l.id]?'Repasar':'Estudiar'}</button></div>`).join('')}</div>`;
+}
+function openLesson(i){
+  clearInterval(timer); S = null; locked = false; clearSession();
+  const l = LESSONS[i]; if (!l) return learnHome();
+  L = {i};
+  const body = l.blocks.map((b,bi)=>renderBlock(b,bi)).join('');
+  const last = i === LESSONS.length-1;
+  app.innerHTML = header() + `<button class="back" data-act="learn">← Lecciones</button>
+  <div class="card"><div class="tag">Lección ${i+1} de ${LESSONS.length} · ${l.min} min</div><h2>${l.emoji} ${esc(l.title)}</h2><div class="mut" style="margin-bottom:8px">📘 ${esc(l.src)}</div>${body}<div id="fb" class="mut"></div></div>
+  <div class="card"><button class="pri big" data-act="ldone" data-i="${i}">✅ Entendí esta lección${last?'':' · siguiente'}</button>
+  <div class="grid" style="margin-top:8px">${l.topic?`<button class="big" data-act="lpractice" data-k="${l.topic}">🎯 Practicar el tema</button>`:`<button class="big" data-act="exam">📝 Simulacro</button>`}<button class="big" data-act="learn">📚 Todas las lecciones</button></div></div>`;
+  try { window.scrollTo(0,0); } catch(e){}
+}
+
 /* ====== Eventos ====== */
 app.addEventListener('click', e=>{
   const b = e.target.closest('[data-act]'); if(!b) return;
   const a = b.dataset.act;
   if (a==='home') return home();
+  if (a==='learn') return learnHome();
+  if (a==='lesson') return openLesson(+b.dataset.i);
+  if (a==='say') return say(b.dataset.t);
+  if (a==='ldone'){
+    const i = +b.dataset.i, l = LESSONS[i];
+    if (l && !state.learned[l.id]){ state.learned[l.id] = true; touchDay(); state.xp += 20; save(); }
+    return (l && i+1 < LESSONS.length) ? openLesson(i+1) : learnHome();
+  }
+  if (a==='lpractice'){ const k = b.dataset.k; return startSession(pick(BANK.filter(q=>q.topic===k),10),{title:TOPICS[k]||'Práctica'}); }
+  if (a==='lchk'){
+    const l = LESSONS[L.i], blk = l && l.blocks[+b.dataset.b], box = b.closest('.ck');
+    if (!blk || !box || box.dataset.done) return;
+    const k = +b.dataset.k, fb = box.querySelector('.ckfb');
+    if (k === blk.answer){
+      box.dataset.done = '1';
+      box.querySelectorAll('.opt').forEach((x,i)=>{ x.disabled = true; if (i===blk.answer) x.classList.add('ok'); });
+      fb.innerHTML = '✅ <b>¡Correcto!</b> ' + md(blk.explain||'');
+    } else {
+      b.classList.add('bad'); b.disabled = true;
+      fb.innerHTML = '❌ Casi. Inténtalo de nuevo. 💡 ' + md(blk.explain||'');
+    }
+    return;
+  }
   if (a==='plan'){ const topics = todayPlan()[3]; return startSession(pick(BANK.filter(q=>topics.includes(q.topic)),10),{title:'Hoy'}); }
   if (a==='smart') return startSession(pick(BANK.filter(q=>q.topic!=='dict'||Math.random()<.3),10),{title:'Inteligente'});
   if (a==='topic') return startSession(pick(BANK.filter(q=>q.topic===b.dataset.k),10),{title:TOPICS[b.dataset.k]});
   if (a==='errors') return startSession(shuffle(BANK.filter(q=>state.wrong[q.id])).slice(0,15),{title:'Mis errores'});
   if (a==='exam'){
-    const mix = {be:3,reg:3,irr:6,neg:4,q:5,conn:3,time:2,read:2,dict:2}; let qs=[];
+    const mix = {be:3,reg:3,irr:5,neg:4,q:5,conn:3,time:2,vocab:1,read:2,dict:2}; let qs=[];
     for (const k in mix) qs = qs.concat(pick(BANK.filter(q=>q.topic===k),mix[k]));
     if (qs.length<30) qs = qs.concat(pick(BANK.filter(q=>!qs.includes(q)),30-qs.length));
     return startSession(shuffle(qs),{title:'Simulacro',exam:true});
