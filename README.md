@@ -43,6 +43,30 @@ Banco actual: 218 preguntas (58 irregulares, 40 regulares, 25 tiempo, fechas y c
 
 Contenido tomado del Student Book Wide Angle 1B (unidades 7 y 8, pp. 4–26, Review pp. 75–76 y Grammar focus pp. 81–82). Las oraciones de práctica son originales, no copias del libro.
 
+## Módulos mejorados (rama de desarrollo v0.3)
+
+La app sigue siendo un solo archivo HTML, sin servicios propios ni librerías. Se conserva el progreso de versiones previas mediante la misma clave local.
+
+- **Aprender:** 10 lecciones con tres comprobaciones cada una. La primera finalización exige responder las preguntas; las lecciones completadas se pueden volver a verificar otro día. Solo se marca recuerdo confirmado al acertar las tres al primer intento durante esa comprobación posterior.
+- **Práctica a medida:** nuevo menú «No sé qué practicar», ejercicios nuevos, dificultades detectadas y sesiones breves. En prácticas normales, el botón «No entiendo» ofrece apoyo; usarlo no cuenta como recuerdo independiente.
+- **Reto sin pistas:** preguntas para escribir y ordenar oraciones sin botón de ayuda, útil para identificar cuándo una respuesta se recuerda y cuándo solo se reconoce.
+- **Repasos:** cada pregunta tiene una próxima fecha de revisión. Los aciertos en tres días diferentes son necesarios para aparecer como dominio confirmado; repetirla varias veces el mismo día no multiplica ese progreso.
+- **Listening:** 12 actividades adicionales de comprensión (audio y alternativas) y 15 dictados originales. Se utilizan voces disponibles en el navegador.
+- **Reading:** 9 ejercicios nuevos de comprensión lectora contextualizada.
+- **Writing:** 12 ejercicios nuevos de traducción y ordenación de oraciones.
+- **Speaking:** 12 frases con audio, repetición y reconocimiento opcional del navegador. No es una evaluación profesional de pronunciación.
+- **Simulacros:** conserva el formato de 30 preguntas, cuenta regresiva y nota; registra resultados recientes.
+- **Avance:** historial de actividad diaria, recordatorios de repaso y progreso por tema; opción de exportar copia JSON del progreso.
+- **Móvil:** estilos adaptables a pantallas estrechas, áreas táctiles de al menos 44 px, tablas con desplazamiento horizontal, controles de texto y soporte para márgenes de pantalla segura.
+
+### Advertencias y alcance
+
+- **Compatibilidad sin internet:** la interfaz y las preguntas no necesitan internet; algunas funciones de voz o reconocimiento sí pueden depender de servicios del navegador, permisos de micrófono o conexión. Su disponibilidad varía entre dispositivos, especialmente cuando la aplicación se abre mediante `file://`.
+- **Sin sincronización:** cada navegador y dispositivo mantiene su propio progreso; la copia exportada es solo un respaldo, no una sincronización automática.
+- **No confundir progreso con nivel de inglés:** XP, cantidad de preguntas o lecciones completadas no son equivalentes a competencia comunicativa. El dominio confirmado solo expresa rendimiento en los ejercicios concretos de la app.
+- **Asignaturas:** esta versión continúa centrada en Inglés Inicial, especialmente ES4. Inglés Habilitante e Inglés Intermedio requieren sus programas oficiales antes de incorporar contenido.
+- **Inspiración pedagógica:** se adoptan ideas generales de práctica breve, repaso, personalización y entrenamiento multisensorial. No se copia diseño, arte, marca ni contenido de Duolingo.
+
 ## Estructura del código
 
 Todo está en `index.html`: CSS, HTML y JavaScript sin librerías.
