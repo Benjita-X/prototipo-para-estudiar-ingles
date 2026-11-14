@@ -48,9 +48,9 @@ Contenido tomado del Student Book Wide Angle 1B (unidades 7 y 8, pp. 4–26, Rev
 La app sigue siendo un solo archivo HTML, sin servicios propios ni librerías. Se conserva el progreso de versiones previas mediante la misma clave local.
 
 - **Aprender:** 10 lecciones con tres comprobaciones cada una. La primera finalización exige responder las preguntas; la comprobación posterior se habilita otro día. Solo se marca recuerdo confirmado al acertar las tres al primer intento. Si no se consigue, la siguiente comprobación se realiza otro día.
-- **Práctica a medida:** nuevo menú «No sé qué practicar», ejercicios nuevos, dificultades detectadas y sesiones breves. En prácticas normales, el botón «No entiendo» ofrece apoyo; usarlo no cuenta como recuerdo independiente.
+- **Práctica a medida:** nuevo menú «No sé qué practicar», ejercicios nuevos, dificultades detectadas y sesiones breves. La sesión diaria intercala hasta cuatro repasos pendientes con el tema del plan. La sesión inteligente combina repasos, puntos débiles y preguntas variadas. En prácticas normales, el botón «No entiendo» ofrece apoyo; usarlo no cuenta como recuerdo independiente.
 - **Reto sin pistas:** preguntas para escribir y ordenar oraciones sin botón de ayuda, útil para identificar cuándo una respuesta se recuerda y cuándo solo se reconoce.
-- **Repasos:** cada pregunta tiene una próxima fecha de revisión. Los aciertos sin ayuda en tres días diferentes son necesarios para aparecer como dominio confirmado; repetirla varias veces el mismo día no multiplica ese progreso. Se incluye un reto de 10 preguntas para recordar sin pistas.
+- **Repasos:** las fichas reveladas son autoevaluaciones, no aumentan el dominio confirmado. Cada pregunta tiene una próxima fecha de revisión. Los aciertos sin ayuda en tres días diferentes son necesarios para aparecer como dominio confirmado; repetirla varias veces el mismo día no multiplica ese progreso. Se incluye un reto de 10 preguntas para recordar sin pistas.
 - **Listening:** 12 actividades adicionales de comprensión (audio y alternativas) y 15 dictados originales. Se utilizan voces disponibles en el navegador.
 - **Reading:** 9 ejercicios nuevos de comprensión lectora contextualizada.
 - **Writing:** 12 ejercicios nuevos de traducción y ordenación de oraciones.
