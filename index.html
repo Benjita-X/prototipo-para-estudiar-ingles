@@ -56,6 +56,58 @@ th{background:var(--pri2)}
 .ck .q2{font-weight:700}
 .ckfb{margin-top:6px;font-size:14px}
 .lp{margin:8px 0}
+/* Diseño adaptable: móviles pequeños, móviles grandes, tablets y escritorio */
+:root{--button-primary:#4f46e5}
+@media (prefers-color-scheme:dark){:root{--button-primary:#4338ca}}
+html{font-size:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{overflow-x:hidden}
+#app{width:100%;max-width:720px;padding:16px max(16px,env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+button{min-height:44px;max-width:100%;touch-action:manipulation;overflow-wrap:anywhere}
+button.pri{background:var(--button-primary);border-color:var(--button-primary);color:white}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,.flash:focus-visible{outline:3px solid var(--pri);outline-offset:3px}
+.row,.ex,.card,.top,.top>*,.row>div,.ex>div{min-width:0}
+.top{flex-wrap:wrap}
+.row{flex-wrap:wrap}
+.row>div[style*="flex:1"]{flex:1 1 170px}
+.row>.sm{flex:0 0 auto}
+.tbl{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.tbl table{width:max-content;min-width:100%;max-width:none}
+.tbl td,.tbl th{min-width:96px;overflow-wrap:break-word}
+.q,.en,.mut,.lp,.rule,.note,.flash .w{overflow-wrap:anywhere}
+input[type=text],textarea{font-size:16px;min-width:0}
+.chip{min-height:44px;max-width:100%;white-space:normal}
+.pills{row-gap:8px}
+@media (max-width:600px){
+  #app{padding-top:12px}
+  .top{align-items:flex-start;gap:10px}
+  .top h1{font-size:20px}
+  .pills{width:100%}
+  .card{padding:14px;border-radius:14px}
+  .q{font-size:19px}
+  .flash .w{font-size:clamp(24px,8vw,34px)}
+}
+@media (max-width:440px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .row{gap:8px}
+  .row>div[style*="flex:1"]{flex:1 1 100%;width:100%}
+  .row>.sm{flex:1 1 auto}
+  #app{padding-right:12px;padding-left:12px}
+  .pill{font-size:12px;padding:5px 9px}
+  .ex{align-items:flex-start}
+  .q{font-size:18px}
+  .card{padding:12px}
+  h2{font-size:17px}
+}
+@media (max-width:340px){
+  #app{padding-left:9px;padding-right:9px}
+  .pills{gap:5px}
+  .pill{font-size:11px;padding:5px 7px}
+  .card{padding:10px}
+  .row>.sm{font-size:13px}
+}
+@media (min-width:441px) and (max-width:640px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -634,6 +686,12 @@ function home(){
   <div class="card" style="margin-top:12px"><h2>Dominio por tema <span class="mut">· total ${pct}%</span></h2>${rows}</div>
   <div class="card"><h2>📈 Mi avance</h2><p class="mut">Preguntas dominadas: ${totM}/${BANK.length}. Repasos para hoy: ${overdue}.</p>
   <button class="big" data-act="progress">Ver estadísticas y simulacros</button></div>
+  <div class="card"><h2>🎧 Practicar habilidades</h2><div class="grid">
+    <button class="big" data-act="listening">🔊 Listening: comprensión</button>
+    <button class="big" data-act="speaking">🎙️ Speaking: pronunciación</button>
+    <button class="big" data-act="reading">📖 Reading: comprensión</button>
+    <button class="big" data-act="writing">✍️ Writing: escribir</button>
+  </div></div>
   <div class="card"><button class="big" data-act="import">➕ Agregar preguntas de ChatGPT (${(state.custom||[]).length} propias)</button></div>
   <p class="mut">Una pregunta se considera "dominada" cuando la aciertas varias veces seguidas. Meta: llegar a 90% antes del 4 de dic.</p>`;
 }
@@ -812,7 +870,7 @@ function learnHome(){
   const done = LESSONS.filter(l=>state.learned[l.id]).length;
   app.innerHTML = header() + `<button class="back" data-act="home">← Inicio</button>
   <div class="card"><h2>📖 Aprender</h2><div class="mut">Lecciones basadas en el Student Book 1B (unidades 7 y 8) y en el cronograma de la ES4. Lee, escucha los ejemplos 🔊 y responde la prueba rápida. Después practica el tema. ${done}/${LESSONS.length} lecciones entendidas.</div><div class="bar" style="margin-top:8px"><i style="width:${100*done/LESSONS.length}%"></i></div></div>
-  <div class="card">${LESSONS.map((l,i)=>`<div class="row"><div style="flex:1"><b>${l.emoji} ${i+1}. ${esc(l.title)}</b><div class="mut">${l.min} min${state.learned[l.id]?' · ✅ entendida':''}</div></div><button class="sm ${state.learned[l.id]?'':'pri'}" data-act="lesson" data-i="${i}">${state.learned[l.id]?'Repasar':'Estudiar'}</button></div>`).join('')}</div>`;
+  <div class="card">${LESSONS.map((l,i)=>`<div class="row"><div style="flex:1"><b>${l.emoji} ${i+1}. ${esc(l.title)}</b><div class="mut">${l.min} min${state.learned[l.id]?' · ✅ completada':''}${state.lessonResults[l.id]?' · '+state.lessonResults[l.id].firstTry+'/3 al primer intento':''}</div></div><button class="sm ${state.learned[l.id]?'':'pri'}" data-act="lesson" data-i="${i}">${state.learned[l.id]?'Repasar':'Estudiar'}</button></div>`).join('')}</div>`;
 }
 function openLesson(i){
   clearInterval(timer); S = null; locked = false; clearSession();
@@ -828,11 +886,50 @@ function openLesson(i){
   try { window.scrollTo(0,0); } catch(e){}
 }
 
+/* ====== Estadísticas locales ====== */
+function progressScreen(){
+  clearInterval(timer); S=null; locked=false; clearSession();
+  const today=new Date(), days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(today.getTime());d.setDate(today.getDate()-i);
+    const key=dayKey(d), a=state.activity[key]||{n:0,ok:0};
+    days.push({key,n:Number(a.n)||0,ok:Number(a.ok)||0});
+  }
+  const maximum=Math.max(1,GOAL,...days.map(d=>d.n));
+  const overall=Object.entries(TOPICS).map(([k,label])=>{
+    const list=BANK.filter(q=>q.topic===k), m=list.filter(mastered).length;
+    return '<div class="row"><div style="flex:1"><b>'+esc(label)+'</b> <span class="mut">'+m+'/'+list.length+'</span><div class="bar"><i style="width:'+(list.length?Math.round(m*100/list.length):0)+'%"></i></div></div></div>';
+  }).join('');
+  const history=(state.exams||[]).slice(-8).reverse().map(e=>'<div class="row"><span>'+esc(String(e.at||'').slice(0,10))+'</span><b>Nota '+esc(e.grade)+' · '+esc(e.correct)+'/'+esc(e.total)+'</b></div>').join('');
+  app.innerHTML=header()+'<button class="back" data-act="home">← Volver</button>'+
+    '<div class="card"><h2>📈 Tu progreso</h2><p class="mut">Los resultados se guardan solamente en este navegador.</p>'+
+    '<h2>Últimos 7 días</h2>'+days.map(d=>'<div class="row"><span style="min-width:58px">'+esc(d.key.slice(5))+'</span><div style="flex:1" class="bar"><i style="width:'+Math.round(100*d.n/maximum)+'%"></i></div><span class="mut">'+d.n+' · '+d.ok+' ✓</span></div>').join('')+'</div>'+
+    '<div class="card"><h2>Dominio por tema</h2>'+overall+'</div>'+
+    '<div class="card"><h2>Simulacros anteriores</h2>'+(history||'<p class="mut">Todavía no hay simulacros completados.</p>')+'</div>'+
+    '<div class="card"><button class="big" data-act="export">⬇️ Exportar copia de mi progreso</button></div>';
+}
+function exportProgress(){
+  try{
+    const data=JSON.stringify({format:'english-es4-backup-v1',exported:new Date().toISOString(),state},null,2);
+    const blob=new Blob([data],{type:'application/json;charset=utf-8'});
+    const href=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=href;a.download='english-trainer-progreso-'+dayKey()+'.json';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(href),2000);
+  }catch(e){alert('No se pudo exportar el progreso en este navegador.');}
+}
+
 /* ====== Eventos ====== */
 app.addEventListener('click', e=>{
   const b = e.target.closest('[data-act]'); if(!b) return;
   const a = b.dataset.act;
   if (a==='home') return home();
+  if (a==='progress') return progressScreen();
+  if (a==='export') return exportProgress();
+  if (a==='listening') return listeningHome();
+  if (a==='speaking') return speakingHome();
+  if (a==='reading') return startSession(pick(BANK.filter(q=>q.topic==='read'),Math.min(12,BANK.filter(q=>q.topic==='read').length)),{title:'Reading'});
+  if (a==='writing') return startSession(pick(BANK.filter(q=>q.type==='type'||q.type==='order'),15),{title:'Writing'});
   if (a==='learn') return learnHome();
   if (a==='lesson') return openLesson(+b.dataset.i);
   if (a==='say') return say(b.dataset.t);
