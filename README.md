@@ -15,6 +15,9 @@
 ### Por qué existe
 Miles de estudiantes cursan cada año el inglés obligatorio de INACAP y no hay una herramienta gratuita alineada con su programa y su libro. Esta app ofrece lecciones en español, repetición espaciada, simulacros con nota en escala chilena y práctica de listening y speaking, todo sin costo.
 
+### 📲 Instalar en el celular
+Abre la demo en el celular → menú del navegador → **"Agregar a pantalla de inicio"** (Chrome/Android) o **Compartir → "Agregar a inicio"** (Safari/iPhone). Queda como una app más y **funciona sin internet**.
+
 **Aportes bienvenidos:** lee [CONTRIBUTING.md](CONTRIBUTING.md) y la [hoja de ruta](ROADMAP.md).
 
 ---
@@ -121,7 +124,7 @@ Cuatro tipos. Estos son los mismos que se pueden importar desde ChatGPT.
 - [ ] Más preguntas de **secuencia** (first, then, after that, finally) si el profesor las evalúa.
 - [ ] Modo "examen final" mezclando todas las unidades.
 - [ ] Gráfico de progreso por día.
-- [ ] Instalar como PWA para usarla como app en el celular.
+- [x] Instalar como PWA para usarla como app en el celular.
 - [x] Exportar e importar el progreso (copia de seguridad).
 - [x] Publicar con GitHub Pages (configurado; ver ROADMAP).
 - [ ] Modo oral (hablar y escribir quedaron fuera de esta primera versión a petición del estudiante).

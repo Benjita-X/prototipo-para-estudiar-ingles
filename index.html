@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>English ES4 Trainer</title>
+<meta name="theme-color" content="#4f46e5">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ES4 Trainer">
 <style>
 :root{--bg:#f4f6fb;--card:#fff;--ink:#1c2233;--mut:#6b7488;--pri:#4f46e5;--pri2:#eef0ff;--ok:#16a34a;--okbg:#e7f8ee;--bad:#dc2626;--badbg:#fdeceb;--line:#e3e7f0;--warn:#f59e0b}
 @media (prefers-color-scheme:dark){:root{--bg:#0f1320;--card:#181d30;--ink:#eef1fb;--mut:#98a2bd;--pri:#818cf8;--pri2:#23284a;--ok:#4ade80;--okbg:#12301f;--bad:#f87171;--badbg:#3a1618;--line:#2a3150;--warn:#fbbf24}}
@@ -1272,6 +1278,12 @@ app.addEventListener('click', e=>{
 });
 
 if (!restoreSession()) home();
+</script>
+<script>
+// App instalable (PWA): solo se activa cuando se abre desde internet (GitHub Pages), no con doble clic.
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 </script>
 </body>
 </html>
