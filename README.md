@@ -1,5 +1,24 @@
 # Prototipo para estudiar inglés
 
+[![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
+![Sin dependencias](https://img.shields.io/badge/dependencias-0-blue.svg)
+![Funciona sin internet](https://img.shields.io/badge/offline-s%C3%AD-brightgreen.svg)
+
+**App gratuita y de código abierto para estudiar inglés A1**, pensada para estudiantes hispanohablantes del curso *Inglés Inicial* de INACAP. Es un solo archivo HTML: no necesita instalación, cuenta, servidor ni internet, así que funciona incluso en celulares antiguos o con mala conexión.
+
+> *Free, open source, offline A1 English trainer for Spanish-speaking students. Single HTML file, zero dependencies.*
+
+🔗 **Demo:** https://benjita-x.github.io/prototipo-para-estudiar-ingles/
+
+<p align="center"><img src="docs/screenshot.png" alt="Pantalla principal de la app en un celular" width="300"></p>
+
+### Por qué existe
+Miles de estudiantes cursan cada año el inglés obligatorio de INACAP y no hay una herramienta gratuita alineada con su programa y su libro. Esta app ofrece lecciones en español, repetición espaciada, simulacros con nota en escala chilena y práctica de listening y speaking, todo sin costo.
+
+**Aportes bienvenidos:** lee [CONTRIBUTING.md](CONTRIBUTING.md) y la [hoja de ruta](ROADMAP.md).
+
+---
+
 App web de un solo archivo (`index.html`) para estudiar inglés nivel A1 y sacar nota 7 en la **ES4** del curso *Inglés Inicial* (INACAP, FGES01). No necesita internet, ni instalación, ni servidor: se abre con doble clic.
 
 ## Cómo usarla
@@ -103,8 +122,8 @@ Cuatro tipos. Estos son los mismos que se pueden importar desde ChatGPT.
 - [ ] Modo "examen final" mezclando todas las unidades.
 - [ ] Gráfico de progreso por día.
 - [ ] Instalar como PWA para usarla como app en el celular.
-- [ ] Exportar e importar el progreso (copia de seguridad).
-- [ ] Publicar con GitHub Pages para abrirla desde cualquier dispositivo.
+- [x] Exportar e importar el progreso (copia de seguridad).
+- [x] Publicar con GitHub Pages (configurado; ver ROADMAP).
 - [ ] Modo oral (hablar y escribir quedaron fuera de esta primera versión a petición del estudiante).
 
 ## Prompt para continuar el proyecto con ChatGPT
