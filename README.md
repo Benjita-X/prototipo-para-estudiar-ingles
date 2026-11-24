@@ -123,7 +123,7 @@ Cuatro tipos. Estos son los mismos que se pueden importar desde ChatGPT.
 - [ ] Agregar los temas de ES1 a ES3 (present simple y continuous, likes y dislikes) para el examen final.
 - [ ] Más preguntas de **secuencia** (first, then, after that, finally) si el profesor las evalúa.
 - [ ] Modo "examen final" mezclando todas las unidades.
-- [ ] Gráfico de progreso por día.
+- [x] Gráfico de progreso por día.
 - [x] Instalar como PWA para usarla como app en el celular.
 - [x] Exportar e importar el progreso (copia de seguridad).
 - [x] Publicar con GitHub Pages (configurado; ver ROADMAP).
