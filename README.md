@@ -8,7 +8,7 @@
 
 > *Free, open source, offline English trainer for Spanish-speaking IT students: core English grammar plus the technical English used in programming docs, error messages and cybersecurity. Single HTML file, zero dependencies.*
 
-🔗 **Demo:** https://benjita-x.github.io/prototipo-para-estudiar-ingles/
+▶️ **Probarla ahora:** descarga o clona el repositorio y abre `index.html` en Chrome o Edge (no necesita instalación, cuenta ni internet). La demo en línea con GitHub Pages está en preparación: el workflow `.github/workflows/pages.yml` ya está configurado y se activará cuando el despliegue quede habilitado.
 
 <p align="center"><img src="docs/screenshot.png" alt="Pantalla principal de la app en un celular" width="300"></p>
 
@@ -22,14 +22,28 @@ Esta app ataca esa barrera en dos partes:
 
 Todo con explicaciones en español, repetición espaciada, simulacros con nota en escala chilena, práctica de listening y speaking, y sin costo.
 
+### Estado del proyecto y evidencia
+
+Proyecto nuevo y pequeño (1 mantenedor, sin estrellas ni descargas medibles todavía). Lo que existe hoy en este repositorio:
+
+| Qué | Detalle |
+|---|---|
+| Inglés para informática | 3 lecciones (programación, mensajes de error y documentación con códigos HTTP, ciberseguridad) y 50 preguntas originales: 16 de programación, 16 de errores y documentación, 18 de ciberseguridad |
+| Banco de preguntas | 251 preguntas en total, con repetición espaciada y explicaciones en español |
+| Sin barreras de acceso | Un solo `index.html`, 0 dependencias, sin cuenta ni servidor; funciona sin internet y se instala como PWA (`manifest.webmanifest`, íconos y `sw.js`) |
+| Seguimiento | Gráfico de progreso de 14 días y gráfico de notas de simulacros |
+| Proyecto abierto | Licencia MIT, [CONTRIBUTING.md](CONTRIBUTING.md) y [ROADMAP.md](ROADMAP.md) |
+
+Captura de la app: `docs/screenshot.png` (arriba). Cada afirmación de esta tabla se puede comprobar abriendo `index.html`.
+
 ### 📲 Instalar en el celular
-Abre la demo en el celular → menú del navegador → **"Agregar a pantalla de inicio"** (Chrome/Android) o **Compartir → "Agregar a inicio"** (Safari/iPhone). Queda como una app más y **funciona sin internet**.
+Cuando la demo en línea esté activa, ábrela en el celular → menú del navegador → **"Agregar a pantalla de inicio"** (Chrome/Android) o **Compartir → "Agregar a inicio"** (Safari/iPhone). Queda como una app más y **funciona sin internet**.
 
 **Aportes bienvenidos:** lee [CONTRIBUTING.md](CONTRIBUTING.md) y la [hoja de ruta](ROADMAP.md).
 
 ---
 
-App web de un solo archivo (`index.html`) para estudiar inglés nivel A1 y sacar nota 7 en la **ES4** del curso *Inglés Inicial* (INACAP, FGES01). No necesita internet, ni instalación, ni servidor: se abre con doble clic.
+**Origen del proyecto:** app web de un solo archivo (`index.html`) para estudiar inglés nivel A1 y sacar nota 7 en la **ES4** del curso *Inglés Inicial* (INACAP, FGES01). No necesita internet, ni instalación, ni servidor: se abre con doble clic.
 
 ## Cómo usarla
 
