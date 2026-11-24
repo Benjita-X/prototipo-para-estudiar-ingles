@@ -1,6 +1,6 @@
 // Guarda la app en el celular para que funcione sin internet.
 // Cambia VERSION cada vez que se publique una actualización de index.html.
-const VERSION = 'es4-v0.4';
+const VERSION = 'es4-v0.5';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {

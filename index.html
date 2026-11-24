@@ -125,7 +125,8 @@ const EXAM = new Date('2026-12-04T08:00:00');
 const GOAL = 20;
 const LS = 'ing_es4_trainer_v1';
 const LS_SESSION = 'ing_es4_trainer_session_v1';
-const TOPICS = {be:'Was / Were',reg:'Regulares (-ed)',irr:'Irregulares',neg:"Negativo (didn't)",q:'Preguntas (Did…?)',conn:'Conectores',time:'Tiempo, fechas y clima',vocab:'Vocabulario del libro',read:'Lectura',dict:'Listening (dictado)',write:'Escritura guiada'};
+const TOPICS = {be:'Was / Were',reg:'Regulares (-ed)',irr:'Irregulares',neg:"Negativo (didn't)",q:'Preguntas (Did…?)',conn:'Conectores',time:'Tiempo, fechas y clima',vocab:'Vocabulario del libro',read:'Lectura',dict:'Listening (dictado)',write:'Escritura guiada',tech:'💻 Inglés para programar',err:'🐞 Errores y documentación',sec:'🛡️ Ciberseguridad'};
+const TECH = ['tech','err','sec'];
 const PLAN = [ // [desde, hasta, titulo, temas]
   ['2026-11-13','2026-11-15','Was/were, conectores y tiempo',['be','conn','time']],
   ['2026-11-16','2026-11-18','Verbos regulares (-ed)',['reg']],
@@ -333,7 +334,60 @@ const HAND = [
  // Material complementario original: lectura, escritura y comprensión auditiva
  ...[{"topic":"read","type":"mcq","q":"Last Friday, Emma visited her grandparents. They made lunch together. In the afternoon, it started to rain, so they stayed inside and played cards. Emma went home at six.\n\nWhat did Emma do when it rained?","options":["She went swimming.","She played cards.","She visited a museum."],"answer":1,"explain":"Busca la información correspondiente en el texto."},{"topic":"read","type":"mcq","q":"Last Friday, Emma visited her grandparents. They made lunch together. In the afternoon, it started to rain, so they stayed inside and played cards. Emma went home at six.\n\nWhen did Emma go home?","options":["At six.","At noon.","At nine."],"answer":0,"explain":"Busca la información correspondiente en el texto."},{"topic":"read","type":"mcq","q":"Last Friday, Emma visited her grandparents. They made lunch together. In the afternoon, it started to rain, so they stayed inside and played cards. Emma went home at six.\n\nWho did Emma visit?","options":["Her friends.","Her teacher.","Her grandparents."],"answer":2,"explain":"Busca la información correspondiente en el texto."},{"topic":"read","type":"mcq","q":"Lucas traveled to Valdivia last month. The trip took three hours. The weather was windy, but he enjoyed walking by the river. On Sunday, he bought a postcard and returned home.\n\nWhere did Lucas go?","options":["Temuco.","Valdivia.","Santiago."],"answer":1,"explain":"Busca la información correspondiente en el texto."},{"topic":"read","type":"mcq","q":"Lucas traveled to Valdivia last month. The trip took three hours. The weather was windy, but he enjoyed walking by the river. On Sunday, he bought a postcard and returned home.\n\nHow long did the trip take?","options":["Three hours.","Two days.","One week."],"answer":0,"explain":"Busca la información correspondiente en el texto."},{"topic":"read","type":"mcq","q":"Lucas traveled to Valdivia last month. The trip took three hours. The weather was windy, but he enjoyed walking by the river. On Sunday, he bought a postcard and returned home.\n\nWhat was the weather like?","options":["Snowy.","Very hot.","Windy."],"answer":2,"explain":"Busca la información correspondiente en el texto."},{"topic":"read","type":"mcq","q":"On Monday, Sofia woke up early because she had an English test. She studied on the bus. The test was difficult, but she answered all the questions. Later, she visited a café with her classmates.\n\nWhy did Sofia wake up early?","options":["She had an English test.","She wanted to play football.","She missed the bus."],"answer":0,"explain":"Busca la información correspondiente en el texto."},{"topic":"read","type":"mcq","q":"On Monday, Sofia woke up early because she had an English test. She studied on the bus. The test was difficult, but she answered all the questions. Later, she visited a café with her classmates.\n\nWhere did she study?","options":["At the café.","On the bus.","At home."],"answer":1,"explain":"Busca la información correspondiente en el texto."},{"topic":"read","type":"mcq","q":"On Monday, Sofia woke up early because she had an English test. She studied on the bus. The test was difficult, but she answered all the questions. Later, she visited a café with her classmates.\n\nDid she answer all the questions?","options":["Yes, she did.","No, she didn't.","No, she wasn't."],"answer":0,"explain":"Busca la información correspondiente en el texto."},{"topic":"write","type":"type","q":"Traduce al inglés: «Ella estuvo en casa ayer.»","answers":["She was at home yesterday."],"explain":"Sujeto + was + lugar + yesterday."},{"topic":"write","type":"type","q":"Traduce al inglés: «Nosotros no fuimos al parque.»","answers":["We didn't go to the park.","We did not go to the park."],"explain":"didn't + go."},{"topic":"write","type":"type","q":"Traduce al inglés: «¿Comiste desayuno ayer?»","answers":["Did you eat breakfast yesterday?","Did you have breakfast yesterday?"],"explain":"Did + sujeto + base."},{"topic":"write","type":"type","q":"Traduce al inglés: «Ellos estaban cansados.»","answers":["They were tired."],"explain":"They + were."},{"topic":"write","type":"type","q":"Traduce al inglés: «Yo estudié inglés anoche.»","answers":["I studied English last night."],"explain":"study → studied."},{"topic":"write","type":"type","q":"Traduce al inglés: «Ella compró un libro.»","answers":["She bought a book."],"explain":"buy → bought."},{"topic":"write","type":"type","q":"Traduce al inglés: «Llovió, pero salimos.»","answers":["It rained but we went out."],"explain":"but = contraste."},{"topic":"write","type":"type","q":"Traduce al inglés: «¿Dónde estuviste ayer?»","answers":["Where were you yesterday?"],"explain":"Where + were + you."},{"topic":"write","type":"order","q":"Ordena las palabras para formar la oración:","answer":"First I woke up. Then I ate breakfast.","explain":"Verifica el orden y las formas del pasado."},{"topic":"write","type":"order","q":"Ordena las palabras para formar la oración:","answer":"We didn't play because it rained.","explain":"Verifica el orden y las formas del pasado."},{"topic":"write","type":"order","q":"Ordena las palabras para formar la oración:","answer":"Did they visit the museum yesterday?","explain":"Verifica el orden y las formas del pasado."},{"topic":"write","type":"order","q":"Ordena las palabras para formar la oración:","answer":"She was happy but she was tired.","explain":"Verifica el orden y las formas del pasado."},{"topic":"dict","type":"mcq","q":"Audio 1: ¿Adónde fueron?","options":["A la playa","Al museo","Al colegio"],"answer":1,"explain":"Escucha nuevamente para confirmar.","audio":"Yesterday we went to the museum."},{"topic":"dict","type":"mcq","q":"Audio 2: ¿Cómo estaba el clima?","options":["Lluvioso y frío","Caluroso y soleado","Ventoso y seco"],"answer":0,"explain":"Escucha nuevamente para confirmar.","audio":"It was rainy and cold in the morning."},{"topic":"dict","type":"mcq","q":"Audio 3: ¿Qué no hizo la persona?","options":["No comió desayuno","No almorzó","No estudió"],"answer":0,"explain":"Escucha nuevamente para confirmar.","audio":"I didn't eat breakfast yesterday."},{"topic":"dict","type":"mcq","q":"Audio 4: ¿Qué compró ella?","options":["Dos poleras","Tres libros","Un teléfono"],"answer":1,"explain":"Escucha nuevamente para confirmar.","audio":"She bought three books last week."},{"topic":"dict","type":"mcq","q":"Audio 5: ¿A qué hora llegaron?","options":["A las seis","A las ocho","A las nueve"],"answer":2,"explain":"Escucha nuevamente para confirmar.","audio":"They arrived at nine o'clock."},{"topic":"dict","type":"mcq","q":"Audio 6: ¿Qué actividad hicieron?","options":["Jugaron fútbol","Fueron al cine","Compraron comida"],"answer":0,"explain":"Escucha nuevamente para confirmar.","audio":"We played football on Saturday."},{"topic":"dict","type":"mcq","q":"Audio 7: ¿Dónde estuvo su hermano?","options":["En el trabajo","En casa","En la escuela"],"answer":1,"explain":"Escucha nuevamente para confirmar.","audio":"My brother was at home last night."},{"topic":"dict","type":"mcq","q":"Audio 8: ¿Qué pregunta hizo?","options":["Si estudió","Si visitó a su abuela","Si cocinó"],"answer":1,"explain":"Escucha nuevamente para confirmar.","audio":"Did you visit your grandmother last weekend?"},{"topic":"dict","type":"mcq","q":"Audio 9: ¿Por qué no fue al colegio?","options":["Estaba enfermo","Era feriado","Estaba lloviendo"],"answer":0,"explain":"Escucha nuevamente para confirmar.","audio":"He didn't go to school because he was sick."},{"topic":"dict","type":"mcq","q":"Audio 10: ¿Cuándo viajó a Chile?","options":["Ayer","Hace dos años","La próxima semana"],"answer":1,"explain":"Escucha nuevamente para confirmar.","audio":"I traveled to Chile two years ago."},{"topic":"dict","type":"mcq","q":"Audio 11: ¿Qué hizo primero?","options":["Vio una película","Estudió inglés","Cocinó"],"answer":2,"explain":"Escucha nuevamente para confirmar.","audio":"First I cooked dinner. Then I watched a movie."},{"topic":"dict","type":"mcq","q":"Audio 12: ¿Por qué estaba feliz el profesor?","options":["Aprobaron la prueba","Era su cumpleaños","Llegaron temprano"],"answer":0,"explain":"Escucha nuevamente para confirmar.","audio":"The teacher was happy because we passed the test."}],
  // Dictado
- ...["I was at home yesterday.","They weren't at school last week.","She went to the beach two days ago.","We didn't watch the movie.","Did you eat breakfast this morning?","He studied English last night.","It was cold, but we played outside.","I didn't go out because it rained.","Where did you meet your friends?","My parents traveled to Chile in 2019.","She called me and told me the news.","Were you at the party on Saturday?","I had pizza for dinner last night.","The weather was sunny yesterday.","We visited a museum and took many photos."].map(D)
+ ...["I was at home yesterday.","They weren't at school last week.","She went to the beach two days ago.","We didn't watch the movie.","Did you eat breakfast this morning?","He studied English last night.","It was cold, but we played outside.","I didn't go out because it rained.","Where did you meet your friends?","My parents traveled to Chile in 2019.","She called me and told me the news.","Were you at the party on Saturday?","I had pizza for dinner last night.","The weather was sunny yesterday.","We visited a museum and took many photos."].map(D),
+ // ===== Inglés técnico: programación =====
+ M('tech','In programming, a «bug» is…',['an error in the code','a new feature','a type of computer'],0,'bug = error o falla en el programa'),
+ M('tech','«Deploy» the app means…',['delete it','put it online so people can use it','write its tests'],1,'deploy = desplegar / publicar en un servidor'),
+ M('tech','A «function» ___ a value. (devuelve)',['returns','turns','learns'],0,'return = devolver un valor'),
+ M('tech','«Fix» a bug means…',['find it','repair it','report it'],1,'fix = arreglar'),
+ M('tech','Before you push your code, you ___ your changes. (git)',['commit','command','connect'],0,'commit = guardar un cambio en el historial de git'),
+ M('tech','«Install the dependencies» means…',['instalar las librerías que necesita el proyecto','borrar archivos viejos','cambiar la contraseña'],0,'dependencies = paquetes o librerías de las que depende el proyecto'),
+ M('tech','«The test failed» means…',['la prueba pasó','la prueba falló','la prueba se borró'],1,'fail = fallar · pass = pasar'),
+ M('tech','A «loop» repeats code. A «string» is…',['a number','text','a list'],1,'string = cadena de texto'),
+ M('tech','«Run» the script means…',['ejecutarlo','copiarlo','borrarlo'],0,'run = ejecutar'),
+ M('tech','Choose the correct sentence:',['The server is down.','The server are down.','The server be down.'],0,'the server = it → is · down = caído, sin servicio'),
+ T('tech','«Archivo» en inglés es ___.',['file'],'file = archivo · folder = carpeta'),
+ T('tech','«Contraseña» en inglés es ___.',['password'],'password = contraseña'),
+ T('tech','«Descargar» en inglés es ___.',['download'],'download = descargar · upload = subir'),
+ T('tech','«Usuario» en inglés es ___.',['user'],'user = usuario'),
+ O('tech','Please update the documentation.','Imperativo: verbo base al inicio (update = actualizar)'),
+ O('tech','The function returns a list.','function = it → returns'),
+ // ===== Mensajes de error y documentación =====
+ M('err','«File not found» means…',['el archivo está vacío','no se encontró el archivo','el archivo es muy grande'],1,'not found = no encontrado'),
+ M('err','«Permission denied» means…',['no tienes permiso','falta internet','el usuario no existe'],0,'deny = negar · denied = negado'),
+ M('err','«Connection timed out» means…',['the connection was too slow and stopped','the password is wrong','the file is missing'],0,'timed out = se acabó el tiempo de espera'),
+ M('err','«Invalid input» means…',['the data you entered is not valid','the program is old','the server is new'],0,'invalid = no válido · input = datos de entrada'),
+ M('err','«Missing required field: email» means…',['falta un campo obligatorio','el correo está repetido','el correo es correcto'],0,'missing = que falta · required = obligatorio'),
+ M('err','In the docs, «deprecated» means…',['nuevo y recomendado','obsoleto, no se recomienda usarlo','prohibido por ley'],1,'deprecated = obsoleto, se eliminará en el futuro'),
+ M('err','«Warning» vs «Error»: a warning…',['stops the program','is a notice, the program can continue','deletes your files'],1,'warning = advertencia · error = el programa no puede seguir'),
+ M('err','«Unexpected token» usually means…',['un error de sintaxis','un virus','poca memoria'],0,'token = símbolo del código · unexpected = inesperado'),
+ M('err','«Out of memory» means…',['no queda memoria disponible','la memoria es rápida','se borró la memoria'],0,'out of = sin, que se acabó'),
+ M('err','Docs: «Run the following command:» means…',['ejecuta el siguiente comando','borra el comando','escribe tu propio comando'],0,'the following = el siguiente / lo que sigue'),
+ M('err','«Make sure Python is installed» means…',['asegúrate de que Python esté instalado','desinstala Python','Python no es necesario'],0,'make sure = asegúrate de'),
+ M('err','«Yesterday the build ___.» (falló)',['failed','fails','failing'],0,'Pasado regular: fail → failed'),
+ T('err','«Not found» es el error HTTP número ___.',['404'],'404 Not Found · 403 Forbidden · 500 Internal Server Error'),
+ T('err','Completa: «Access ___» (acceso denegado).',['denied'],'Access denied = acceso denegado'),
+ O('err','Check your internet connection and try again.','check = revisar · try again = intentar de nuevo'),
+ O('err','Did you read the error message?','Pregunta en pasado: Did + sujeto + verbo base'),
+ // ===== Ciberseguridad =====
+ M('sec','A «vulnerability» is…',['a weakness that an attacker can use','a strong password','a backup copy'],0,'vulnerability = vulnerabilidad, debilidad'),
+ M('sec','«Phishing» is…',['a fake message that tries to steal your data','a type of firewall','a programming language'],0,'phishing = engaño por correo o mensaje para robar datos'),
+ M('sec','«Malware» is…',['malicious software','a new laptop','a secure network'],0,'malware = software malicioso'),
+ M('sec','A «firewall»…',['blocks or allows network traffic','stores passwords','writes code'],0,'firewall = cortafuegos, filtra el tráfico de red'),
+ M('sec','«Encrypt» the data means…',['cifrarla para que no se pueda leer sin la clave','borrarla','copiarla'],0,'encrypt = cifrar · decrypt = descifrar'),
+ M('sec','A «breach» is…',['an incident where data is exposed or stolen','a security update','a strong password'],0,'data breach = filtración de datos'),
+ M('sec','«Patch» the system means…',['instalar una corrección de seguridad','apagar el sistema','comprar un sistema nuevo'],0,'patch = parche, corrección'),
+ M('sec','«Two-factor authentication» (2FA) means…',['two passwords on paper','a password plus a second check, like a code on your phone','two users'],1,'2FA = verificación en dos pasos'),
+ M('sec','An «attacker» ___ the server last night. (atacó)',['attacked','attacks','attack'],0,'Pasado regular: attack → attacked'),
+ M('sec','«Least privilege» means users get…',['only the permissions they need','all permissions','no account'],0,'least privilege = mínimo privilegio'),
+ M('sec','«Brute force» attack means…',['trying many passwords until one works','sending one email','fixing a bug'],0,'brute force = fuerza bruta'),
+ M('sec','Choose the correct sentence:',["Don't share your password.","Don't shares your password.","Not share your password."],0,"Imperativo negativo: Don't + verbo base"),
+ T('sec','«Amenaza» en inglés es ___.',['threat'],'threat = amenaza · risk = riesgo'),
+ T('sec','«Respaldo / copia de seguridad» en inglés es ___.',['backup'],'backup = respaldo'),
+ T('sec','«Registro (de eventos)» en inglés es ___. (los revisas tras un ataque)',['log','logs'],'logs = registros del sistema'),
+ O('sec','The attacker stole the passwords.','steal → stole (irregular)'),
+ O('sec','Always update your software.','always va antes del verbo'),
+ O('sec','We found a vulnerability in the login page.','find → found (irregular)'),
 ];
 
 const IRR = [['go','went','ir'],['have','had','tener'],['see','saw','ver'],['meet','met','conocer / encontrarse'],['come','came','venir'],['do','did','hacer'],['eat','ate','comer'],['buy','bought','comprar'],['get','got','conseguir / obtener'],['make','made','hacer / fabricar'],['take','took','tomar / llevar'],['write','wrote','escribir'],['say','said','decir'],['give','gave','dar'],['read','read','leer (se pronuncia "red")'],['sleep','slept','dormir'],['drink','drank','beber'],['drive','drove','manejar'],['swim','swam','nadar'],['run','ran','correr'],['sit','sat','sentarse'],['speak','spoke','hablar'],['tell','told','contar / decir'],['think','thought','pensar'],['know','knew','saber / conocer'],['leave','left','salir / dejar'],['find','found','encontrar'],['lose','lost','perder'],['wear','wore','usar (ropa)'],['sing','sang','cantar'],['fly','flew','volar'],['begin','began','empezar'],['bring','brought','traer'],['build','built','construir'],['feel','felt','sentir'],['forget','forgot','olvidar'],['pay','paid','pagar'],['put','put','poner'],['sell','sold','vender'],['send','sent','enviar'],['stand','stood','estar de pie'],['win','won','ganar'],['wake','woke','despertar'],['spend','spent','gastar / pasar tiempo'],['cut','cut','cortar'],['hear','heard','oír'],['keep','kept','guardar / mantener'],['ride','rode','montar'],['draw','drew','dibujar'],['hold','held','sostener / mantener (un récord)'],['break','broke','romper / batir (un récord)'],['set','set','establecer / fijar'],['grow','grew','crecer']];
@@ -536,6 +590,46 @@ const LESSONS = [
   CK('I ___ at school yesterday. (negativo, be)',["wasn't","weren't","didn't"],0,"I → wasn't"),
   CK("They didn't ___ the bus.",['took','take','takes'],1,"didn't + base"),
   CK('___ she see Tom last week?',['Was','Did','Does'],1,'verbo normal en pasado → Did')
+ ]},
+ {id:'tech',topic:'tech',emoji:'💻',min:8,title:'Inglés para programar: palabras clave',src:'Inglés técnico · contenido original',track:'tech',blocks:[
+  P("Casi toda la documentación, los tutoriales y las respuestas en foros de programación están en **inglés**. La buena noticia: se repite un vocabulario pequeño. Con estas palabras ya entiendes gran parte de un README o de un tutorial."),
+  TB(['Inglés','Español','Ejemplo'],[['bug / fix','error / arreglar','I fixed the bug.'],['run / execute','ejecutar','Run the script.'],['install / update','instalar / actualizar','Update the packages.'],['file / folder','archivo / carpeta','Open the config file.'],['deploy','publicar en un servidor','We deployed the app.'],['commit / push','guardar / subir cambios (git)','Commit and push your changes.'],['return','devolver (un valor)','The function returns a number.']]),
+  X('Run the script.','Ejecuta el script.'),
+  X('The function returns a list.','La función devuelve una lista.'),
+  X('I fixed the bug yesterday.','Arreglé el error ayer.'),
+  R("Las instrucciones de la documentación usan **imperativo**: verbo base al inicio, sin sujeto. **Install** Node. **Open** the terminal. **Don't** delete this file."),
+  TIP("Lo que aprendiste del pasado simple sirve aquí: los mensajes de commit y los reportes de errores cuentan lo que pasó. «I **added** a test», «The build **failed**», «We **found** a bug»."),
+  W("No traduzcas palabra por palabra: «run» en programación no es correr, es **ejecutar**. Y «library» es **librería** de código (biblioteca)."),
+  CK('«Run the tests» significa…',['ejecuta las pruebas','corre rápido','borra las pruebas'],0,'run = ejecutar'),
+  CK('The function ___ a string.',['return','returns','returning'],1,'the function = it → returns'),
+  CK('Yesterday I ___ the bug.',['fix','fixed','fixes'],1,'pasado regular: fix → fixed')
+ ]},
+ {id:'err',topic:'err',emoji:'🐞',min:7,title:'Leer mensajes de error y documentación',src:'Inglés técnico · contenido original',track:'tech',blocks:[
+  P("Cuando un programa falla, te dice **por qué**, en inglés. Entender el mensaje es la mitad de la solución, y te permite buscarlo en internet."),
+  TB(['Mensaje','Qué significa'],[['File not found','No se encontró el archivo (¿ruta mal escrita?)'],['Permission denied','No tienes permiso'],['Connection timed out','Se agotó el tiempo de espera de la conexión'],['Invalid input / argument','El dato que entregaste no es válido'],['Missing required field','Falta un campo obligatorio'],['Unexpected token','Error de sintaxis: un símbolo donde no corresponde'],['Out of memory','No queda memoria']]),
+  R("Palabras que aparecen siempre: **not found** (no encontrado) · **denied** (negado) · **invalid** (no válido) · **missing** (falta) · **failed** (falló) · **deprecated** (obsoleto)."),
+  P("**Códigos HTTP frecuentes:** 200 OK · 401 Unauthorized (no has iniciado sesión) · 403 Forbidden (prohibido) · 404 Not Found · 500 Internal Server Error."),
+  X('Make sure Python is installed.','Asegúrate de que Python esté instalado.'),
+  X('Run the following command.','Ejecuta el siguiente comando.'),
+  X('Check your connection and try again.','Revisa tu conexión e inténtalo de nuevo.'),
+  TIP("Copia la última línea del error y búscala tal cual en internet: casi siempre alguien ya preguntó lo mismo en inglés."),
+  W("Un **warning** no es un error: el programa sigue funcionando, pero te avisa de algo. Un **error** detiene el programa."),
+  CK('«Permission denied» significa…',['no tienes permiso','archivo no encontrado','sin internet'],0,'denied = negado'),
+  CK('«Deprecated» en la documentación significa…',['obsoleto','recomendado','gratis'],0,'deprecated = obsoleto'),
+  CK('Error 404 es…',['Not Found','Forbidden','Server Error'],0,'404 = no encontrado')
+ ]},
+ {id:'sec',topic:'sec',emoji:'🛡️',min:8,title:'Ciberseguridad: vocabulario esencial',src:'Inglés técnico · contenido original',track:'tech',blocks:[
+  P("Los cursos, certificaciones y alertas de seguridad usan un vocabulario muy específico. Estas son las palabras que aparecen en casi cualquier noticia o informe de seguridad."),
+  TB(['Inglés','Español'],[['threat / risk','amenaza / riesgo'],['vulnerability','vulnerabilidad, debilidad'],['attacker','atacante'],['malware','software malicioso'],['phishing','engaño para robar datos'],['firewall','cortafuegos'],['encrypt / decrypt','cifrar / descifrar'],['breach','filtración (de datos)'],['patch','parche de seguridad'],['backup','respaldo'],['logs','registros del sistema']]),
+  X('We found a vulnerability in the login page.','Encontramos una vulnerabilidad en la página de inicio de sesión.'),
+  X('The attacker stole the passwords.','El atacante robó las contraseñas.'),
+  X('Always update your software.','Siempre actualiza tu software.'),
+  R("Los informes de incidentes se escriben en **pasado simple**: what happened (qué pasó), when (cuándo) y what we did (qué hicimos). «On Monday an attacker **sent** phishing emails. We **blocked** the domain and **reset** the passwords.»"),
+  TIP("Principios que vas a leer mucho: **least privilege** (mínimo privilegio), **defense in depth** (defensa en capas) y **two-factor authentication / 2FA** (verificación en dos pasos)."),
+  W("«Hacker» no siempre es delincuente. Para hablar de alguien que ataca se dice **attacker** o **threat actor**."),
+  CK('«Encrypt» significa…',['cifrar','borrar','copiar'],0,'encrypt = cifrar'),
+  CK('A fake email that tries to steal your password is…',['phishing','a patch','a firewall'],0,'phishing'),
+  CK('The attacker ___ the data. (robó)',['stole','stealed','steal'],0,'steal → stole (irregular)')
  ]}
 ];
 
@@ -736,6 +830,9 @@ function home(){
     <button class="big" data-act="cards">🃏 Fichas de irregulares</button>
     <button class="big" data-act="errors" ${wrongN?'':'disabled'}>❌ Mis errores (${wrongN})</button>
   </div>
+  <div class="card" style="margin-top:12px"><h2>💻 Inglés para informática</h2><p class="mut">La mayoría de la documentación, los cursos y las herramientas de programación y ciberseguridad están en inglés. Aprende el vocabulario y las frases que más vas a leer.</p>
+    <button class="pri big" data-act="techsession">▶ Practicar inglés técnico (10 preguntas)</button>
+    <div class="grid" style="margin-top:8px">${TECH.map(k=>`<button class="big" data-act="lesson" data-i="${lessonIdx(k)}">${TOPICS[k]}</button>`).join('')}</div></div>
   <div class="card" style="margin-top:12px"><h2>Dominio por tema <span class="mut">· total ${pct}%</span></h2>${rows}</div>
   <div class="card"><h2>📈 Mi avance</h2><p class="mut">Recuerdo confirmado en días diferentes: ${totM}/${BANK.length}. Repasos para hoy: ${overdue}.</p>
   <button class="big" data-act="progress">Ver estadísticas y simulacros</button></div>
@@ -928,7 +1025,7 @@ function learnHome(){
   const done = LESSONS.filter(l=>state.learned[l.id]).length;
   const retained=LESSONS.filter(l=>state.lessonResults[l.id]?.retainedAt).length;
   app.innerHTML = header() + `<button class="back" data-act="home">← Inicio</button>
-  <div class="card"><h2>📖 Aprender</h2><div class="mut">Lecciones basadas en el Student Book 1B (unidades 7 y 8) y en el cronograma de la ES4. Lee, escucha los ejemplos 🔊 y responde la prueba rápida. Después practica el tema. ${done}/${LESSONS.length} introducciones completadas · ${retained}/${LESSONS.length} comprobadas otro día.</div><div class="bar" style="margin-top:8px"><i style="width:${100*done/LESSONS.length}%"></i></div></div>
+  <div class="card"><h2>📖 Aprender</h2><div class="mut">Lecciones de la base del inglés (Student Book 1B, unidades 7 y 8) y de inglés técnico para programación y ciberseguridad. Lee, escucha los ejemplos 🔊 y responde la prueba rápida. Después practica el tema. ${done}/${LESSONS.length} introducciones completadas · ${retained}/${LESSONS.length} comprobadas otro día.</div><div class="bar" style="margin-top:8px"><i style="width:${100*done/LESSONS.length}%"></i></div></div>
   <div class="card">${LESSONS.map((l,i)=>`<div class="row"><div style="flex:1"><b>${l.emoji} ${i+1}. ${esc(l.title)}</b><div class="mut">${l.min} min${state.lessonResults[l.id]?.retainedAt?' · 🧠 recordada otro día':state.learned[l.id]?' · ✅ introducción completada':''}${state.lessonResults[l.id]?' · '+state.lessonResults[l.id].firstTry+'/3 al primer intento':''}</div></div><button class="sm ${state.learned[l.id]?'':'pri'}" data-act="lesson" data-i="${i}">${state.learned[l.id]?'Repasar':'Estudiar'}</button></div>`).join('')}</div>`;
 }
 function openLesson(i){
@@ -1259,6 +1356,7 @@ app.addEventListener('click', e=>{
   if (a==='plan') return startSession(dailyQuestions(10),{title:'Hoy'});
   if (a==='due') return startSession(pick(BANK.filter(reviewDue),Math.min(20,dueCount())),{title:'Repaso programado'});
   if (a==='smart') return startSession(smartQuestions(10),{title:'Inteligente'});
+  if (a==='techsession') return startSession(pick(BANK.filter(q=>TECH.includes(q.topic)),10),{title:'Inglés técnico'});
   if (a==='topic') return startSession(pick(BANK.filter(q=>q.topic===b.dataset.k),10),{title:TOPICS[b.dataset.k]});
   if (a==='errors') return startSession(shuffle(BANK.filter(q=>state.wrong[q.id])).slice(0,15),{title:'Mis errores'});
   if (a==='exam'){
