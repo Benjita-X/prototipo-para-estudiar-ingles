@@ -1,5 +1,34 @@
 # Prototipo para estudiar inglés
 
+[![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
+![Sin dependencias](https://img.shields.io/badge/dependencias-0-blue.svg)
+![Funciona sin internet](https://img.shields.io/badge/offline-s%C3%AD-brightgreen.svg)
+
+**App gratuita y de código abierto para aprender la base del inglés y el inglés técnico que necesitas para estudiar programación y ciberseguridad.** Pensada para estudiantes hispanohablantes de informática. Es un solo archivo HTML: no necesita instalación, cuenta, servidor ni internet, así que funciona incluso en celulares antiguos o con mala conexión.
+
+> *Free, open source, offline English trainer for Spanish-speaking IT students: core English grammar plus the technical English used in programming docs, error messages and cybersecurity. Single HTML file, zero dependencies.*
+
+🔗 **Demo:** https://benjita-x.github.io/prototipo-para-estudiar-ingles/
+
+<p align="center"><img src="docs/screenshot.png" alt="Pantalla principal de la app en un celular" width="300"></p>
+
+### Por qué existe
+La mayoría de la documentación, los cursos, las certificaciones y las respuestas en foros de programación y ciberseguridad están **en inglés**. Para muchos estudiantes de Latinoamérica, el idioma es la primera barrera para aprender tecnología, antes que el código.
+
+Esta app ataca esa barrera en dos partes:
+
+1. **La base del inglés** (gramática y vocabulario A1), alineada con el curso obligatorio *Inglés Inicial* de INACAP. Es el punto de partida.
+2. **Inglés para informática:** vocabulario de programación, cómo leer mensajes de error y documentación, y vocabulario esencial de ciberseguridad, conectado con la gramática (imperativo de la documentación, pasado simple de los informes de incidentes).
+
+Todo con explicaciones en español, repetición espaciada, simulacros con nota en escala chilena, práctica de listening y speaking, y sin costo.
+
+### 📲 Instalar en el celular
+Abre la demo en el celular → menú del navegador → **"Agregar a pantalla de inicio"** (Chrome/Android) o **Compartir → "Agregar a inicio"** (Safari/iPhone). Queda como una app más y **funciona sin internet**.
+
+**Aportes bienvenidos:** lee [CONTRIBUTING.md](CONTRIBUTING.md) y la [hoja de ruta](ROADMAP.md).
+
+---
+
 App web de un solo archivo (`index.html`) para estudiar inglés nivel A1 y sacar nota 7 en la **ES4** del curso *Inglés Inicial* (INACAP, FGES01). No necesita internet, ni instalación, ni servidor: se abre con doble clic.
 
 ## Cómo usarla
@@ -25,6 +54,13 @@ App web de un solo archivo (`index.html`) para estudiar inglés nivel A1 y sacar
 - Temas por clase según el cronograma oficial: clima, *was/were* (afirmativo, negativo, preguntas), fechas y expresiones de tiempo, conectores **and / but / because**, pasado simple regular e irregular (afirmativo, negativo y preguntas con *did*).
 - Después de la ES4 hay un examen final escrito de todas las unidades.
 - Escala de notas chilena: 60% de exigencia = 4.0, 100% = 7.0.
+
+## Inglés para informática (v0.4)
+
+- **3 lecciones nuevas:** 💻 palabras clave para programar · 🐞 leer mensajes de error y documentación (incluye códigos HTTP) · 🛡️ vocabulario esencial de ciberseguridad.
+- **50 preguntas originales** (16 de programación, 16 de errores y documentación, 18 de ciberseguridad) de alternativas, escritura y ordenar oraciones.
+- Cada lección conecta el vocabulario con la gramática: el **imperativo** de las instrucciones («Run the following command») y el **pasado simple** de los commits y los informes de incidentes («The attacker stole the passwords»).
+- Botón **«Practicar inglés técnico»** en el inicio. Estos temas **no se mezclan con el simulacro de la ES4**.
 
 ## Qué hace la app (v0.3)
 
@@ -101,10 +137,10 @@ Cuatro tipos. Estos son los mismos que se pueden importar desde ChatGPT.
 - [ ] Agregar los temas de ES1 a ES3 (present simple y continuous, likes y dislikes) para el examen final.
 - [ ] Más preguntas de **secuencia** (first, then, after that, finally) si el profesor las evalúa.
 - [ ] Modo "examen final" mezclando todas las unidades.
-- [ ] Gráfico de progreso por día.
-- [ ] Instalar como PWA para usarla como app en el celular.
-- [ ] Exportar e importar el progreso (copia de seguridad).
-- [ ] Publicar con GitHub Pages para abrirla desde cualquier dispositivo.
+- [x] Gráfico de progreso por día.
+- [x] Instalar como PWA para usarla como app en el celular.
+- [x] Exportar e importar el progreso (copia de seguridad).
+- [x] Publicar con GitHub Pages (configurado; ver ROADMAP).
 - [ ] Modo oral (hablar y escribir quedaron fuera de esta primera versión a petición del estudiante).
 
 ## Prompt para continuar el proyecto con ChatGPT
